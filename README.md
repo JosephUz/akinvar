@@ -1,10 +1,16 @@
 # Akın Var
 
+> **EN:** A round-based team army battle in the browser (Three.js), inspired by Total War with Throne of Curse combat: build your army from cards, fight in a shrinking ring under fog, then storm the enemy flags; up to 5v5 with bots or in an online room.
+>
+> **TR:** Tarayıcıda (Three.js) Total War esintili, tur tabanlı takım ordu savaşı, dövüşü Throne of Curse'ten: ordunu kartlarla kur, sisli ve daralan çemberde savaş, sonra rakip bayraklara yüklen; 5v5'e kadar botlarla ya da çevrim içi odada.
+
+**Play / Oyna:** https://akinvar.josephuz.com · **Source / Kaynak:** https://github.com/JosephUz/akinvar
+
 Tarayıcıda Three.js ile çalışan, Total War esintili, tur tabanlı takım ordu savaşı. Savaş mantığı Throne of Curse'ten gelir. Tasarım: [docs/oyun-fikri.md](docs/oyun-fikri.md).
 
 ## Başlatma
 
-`Baslat.cmd` dosyasına çift tıklayın ya da bu klasörde `npm start` çalıştırın, ardından http://localhost:5240 adresini açın. Node.js gerekir, npm kurulumu gerekmez (Three.js 0.180 `vendor/` içinde).
+`Baslat.cmd` dosyasına çift tıklayın ya da bu klasörde `npm start` çalıştırın, ardından http://localhost:5240 adresini açın. Node.js gerekir; ilk seferde `npm install` (yalnız `ws`). Three.js 0.180 `vendor/` içinde.
 
 - `?asker=10000`: asker sayısı (en çok 20.000)
 - `?golge=0`: gölgeler kapalı
@@ -49,6 +55,12 @@ Did you mean one of these?
 To see a list of supported npm commands, run:
   npm help (çevrim içi odalar aynı portta, ws). Henüz Docker ve tunnel yok.
 
+
+## Yayın
+
+- İstemci: Cloudflare Worker, `akinvar.josephuz.com` → `npm run deploy:web`
+- Sunucu: Docker + Cloudflare Tunnel, `akinvar-sunucu.josephuz.com` → `docker compose --profile tunnel up -d --build`
+  (`.env` içinde `TUNNEL_TOKEN`, paneldeki rota `http://localhost:5240`).
 
 ## Lisans / License
 

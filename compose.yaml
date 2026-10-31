@@ -1,0 +1,31 @@
+# Yerel Docker kurulumu: `docker compose up -d --build`, ardından http://localhost:5240
+# Oyun portu yalnızca bu bilgisayara açıktır (127.0.0.1); dışarıdan erişim Cloudflare Tunnel ile:
+# `docker compose --profile tunnel up -d --build` (TUNNEL_TOKEN .env dosyasında; paneldeki rota http://localhost:5240).
+name: akinvar
+services:
+  game:
+    build: .
+    image: akin-var
+    container_name: akinvar
+    init: true
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${PORT:-5240}:5240"
+    environment:
+      HOST: 0.0.0.0
+      PORT: 5240
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: akinvar-tunnel
+    profiles: ["tunnel"]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    # Oyunun ağ alanını paylaşır: paneldeki rota http://localhost:5240 doğrudan oyuna gider.
+    # Oyun konteyneri yeniden kurulursa tünel de: `docker compose --profile tunnel up -d --no-build --force-recreate tunnel`
+    network_mode: "service:game"
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}  # boşsa cloudflared başlamaz; .env dosyasına yaz
+    depends_on:
+      game:
+        condition: service_healthy

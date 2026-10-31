@@ -34,7 +34,7 @@ Tarayıcıda Three.js ile çalışan, Total War esintili, tur tabanlı takım or
 - **Faz 3 (çevrim içi ve hazırlık arayüzü):**
   - josephuz oda standardı: ADIN, tek başına, ÇEVRİM İÇİ (hızlı katıl, oda kur, odaya katıl), açık odalar, bekleme odası (Mavi / Kırmızı koltuklar, takım, bayrak canı, bot zorluğu, açık / özel), davet linki ?oda=KOD, jetonla geri dönüş, kopanın yerine bot.
   - Maçı sunucu yürütür (20 Hz); istemci savaşı sunucunun adımları ve emirleriyle aynen koşar, 3 sn'de bir ikili anlıkla düzeltir.
-  - Savaş: her bölüğün üstünde silah (atlıda at) ikonlu sancak, üstü aile renginde, çerçevesi oyuncu renginde; kalkan, miğfer, omuzluk ve silah malzemesine göre boyalı (tahta/deri kahve, demir gri, çelik parlak). Seçilen bölükler sol altta sınıf sınıf deste kartı (×n, kalan asker çubuğu).
+  - Savaş: her bölüğün üstünde siyah zeminde asker görselli sancak (askerlerin çizilen konumunu her karede izler), üstü aile renginde, çerçevesi oyuncu renginde; kalkan, miğfer, omuzluk ve silah malzemesine göre boyalı (tahta/deri kahve, demir gri, çelik parlak). Seçilen bölükler sol altta sınıf sınıf deste kartı (×n, kalan asker çubuğu).
   - Hazırlık: throneofcurse asker görselleri ve eşya ikonlu kartlar, en ucuz sol üstte, sınıf başına Geliştir, bilgi şeridi (malzeme, üstün / zayıf olduğu sınıflar).
   - Fiyatlar throneofcurse üretim tariflerinden (odun, demir, çelik, deri, yem).
   - Emirsiz bölükler botun yapay zekâsıyla savaşır; bot zorluğu Kolay / Orta / Zor.

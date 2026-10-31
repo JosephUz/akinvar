@@ -278,25 +278,33 @@ function syncSelection() {
 
 // ---------- bölük sancakları ve seçim destesi ----------
 
-// Her bölüğün üstünde silahının throneofcurse ikonu (atlıda at da): kılıç, mızrak, yay ve malzemesi bir bakışta.
-let tagEls = [], tagShown = [], deckSig = '';
+// Her bölüğün üstünde siyah zeminde throneofcurse asker görseli: sınıfı (silah, kalkan, zırh, at) bir bakışta.
+let tagEls = [], tagShown = [], deckSig = '', drawAlpha = 1, tagX = new Float32Array(0), tagZ = new Float32Array(0), tagN = new Int32Array(0);
 function buildTags() {
   $('unit-tags').innerHTML = [...Array(w.B).keys()].map((b) => {
     const c = CLASSES[w.bcls[b]], color = m.players[m.order[w.bowner[b]]].color;
-    return `<div class="tag ${w.bteam[b] === me.team ? 'own' : 'foe'} ${mine(b) ? 'mine' : ''}" style="--team:${color};--fam:${FAMILIES[c.family].color}"><img src="${ICON(c.items[0] ?? 'SOLDIER_TRAINING')}" alt="">${c.mounted ? `<img src="${ICON(c.items.at(-1))}" alt="">` : ''}</div>`;
+    return `<div class="tag ${w.bteam[b] === me.team ? 'own' : 'foe'} ${mine(b) ? 'mine' : ''}" style="--team:${color};--fam:${FAMILIES[c.family].color}"><img src="${IMG(c)}" alt="" style="object-view-box:${viewBox.get(IMG(c)) ?? 'none'}"></div>`;
   }).join('');
   tagEls = [...$('unit-tags').children]; tagShown = tagEls.map(() => false); deckSig = '';
+  tagX = new Float32Array(w.B); tagZ = new Float32Array(w.B); tagN = new Int32Array(w.B);
 }
 function placeTags() {
   const show = state === 'battle' || state === 'flag', proj = show && view.projector();
+  // Sancak, askerlerin çizildiği (ara değerli) konumların ortasında: simülasyonun bölük ortası yalnız yarım saniyede bir yenilenir, takılır.
+  if (show && tagX.length === w.B) {
+    tagX.fill(0); tagZ.fill(0); tagN.fill(0);
+    const { x, z, px, pz, hp, boluk } = w, a = drawAlpha;
+    for (let i = 0; i < w.N; i++) if (hp[i] > 0) { const b = boluk[i]; tagX[b] += px[i] + (x[i] - px[i]) * a; tagZ[b] += pz[i] + (z[i] - pz[i]) * a; tagN[b]++; }
+  }
   if (show) $('unit-tags').style.setProperty('--s', Math.max(0.55, Math.min(1.1, 26 / view.zoom)).toFixed(2));
   for (let b = 0; b < tagEls.length; b++) {
-    let vis = show && b < w.B && w.balive[b] > 0 && (w.bteam[b] === me.team || !view.fogOn || visibleTo(w, me.team, w.cx[b], w.cz[b]));
-    const s = vis && proj(w.cx[b], w.cz[b], 2.6);
-    if (vis && !(s.x > 20 && s.x < innerWidth - 20 && s.y > 40 && s.y < innerHeight)) vis = false; // ekran dışındaki yarım görünmesin
+    const n = show && b < tagN.length ? tagN[b] : 0, cx = tagX[b] / n, cz = tagZ[b] / n;
+    let vis = n > 0 && (w.bteam[b] === me.team || !view.fogOn || visibleTo(w, me.team, cx, cz));
+    const s = vis && proj(cx, cz, 2.6);
+    if (vis && !(s.x > 20 && s.x < innerWidth - 20 && s.y > 100 && s.y < innerHeight)) vis = false; // ekran dışındaki ya da üst bandın altındaki yarım görünmesin
     if (vis !== tagShown[b]) { tagShown[b] = vis; tagEls[b].style.display = vis ? '' : 'none'; }
     if (!vis) continue;
-    tagEls[b].style.transform = `translate(${s.x.toFixed(0)}px,${s.y.toFixed(0)}px) translate(-50%,-100%)`;
+    tagEls[b].style.transform = `translate(${s.x.toFixed(1)}px,${s.y.toFixed(1)}px) translate(-50%,-100%)`;
   }
 }
 
@@ -697,7 +705,8 @@ function frame(now) {
   if (state === 'menu') { view.angle += dt * 0.03; if (w.winner >= 0) menuBattle(); }
   if (state !== 'prep') {
     const b = performance.now();
-    view.render(w, running ? Math.min(1, acc / TICK) : 1, now / 1000, dt);
+    drawAlpha = running ? Math.min(1, acc / TICK) : 1;
+    view.render(w, drawAlpha, now / 1000, dt);
     stats.drawSum += performance.now() - b;
   }
   if (state === 'flag' || state === 'roundEnd') placeFlagLabels();

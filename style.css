@@ -160,10 +160,9 @@ footer{position:fixed;bottom:16px;left:30px;right:30px;font-size:.6em;letter-spa
 #flag-banner h3{font:normal 1.5em Georgia,serif;margin:4px 0}#flag-banner p{margin:0;font-size:.85em;color:var(--muted)}
 /* bölük sancakları: takım renginde çerçeve, içinde silah (ve at) ikonu */
 #unit-tags{position:absolute;inset:0;pointer-events:none;z-index:3;overflow:hidden}
-.tag{position:absolute;left:0;top:0;display:flex;padding:2px 3px;background:#efe6cc;border:2px solid var(--team);border-top:5px solid var(--fam);border-radius:4px;box-shadow:0 2px 5px #0009;will-change:transform}
-#unit-tags .tag img{width:calc(26px * var(--s));height:calc(26px * var(--s));display:block}.tag img+img{margin-left:-3px}
-.tag.foe{background:#e9cfc4}
-.tag.sel{box-shadow:0 0 0 2px #fff,0 0 10px #fff9;background:#fffbe9}
+.tag{position:absolute;left:0;top:0;padding:1px;background:#000;border:2px solid var(--team);border-top:4px solid var(--fam);border-radius:4px;box-shadow:0 2px 6px #000a;will-change:transform}
+#unit-tags .tag img{width:calc(46px * var(--s));height:calc(46px * var(--s));object-fit:contain;object-position:50% 100%;display:block}
+.tag.sel{box-shadow:0 0 0 2px #fff,0 0 10px #fff9}
 #deck{display:flex;flex-wrap:wrap;gap:12px 14px;margin:10px 4px 12px 0;max-width:min(680px,calc(100vw - 60px))}
 #deck:empty{display:none}
 .dk{position:relative;width:84px;font-size:.92em;padding:0 0 6px;display:flex;flex-direction:column;align-items:stretch;text-align:left;background:linear-gradient(#24372c,#1a2a20);border:1px solid var(--fam);border-top-width:3px;border-radius:6px;overflow:visible}

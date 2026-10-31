@@ -21,3 +21,11 @@ Tarayıcıda Three.js ile çalışan, Total War esintili, tur tabanlı takım or
 - Simülasyon bölük düzeyinde, belirlenimci.
 - Çizim InstancedMesh ile.
 - RTX 5080'de 20.000 askerle 60 kare/sn.
+
+## Lisans / License
+
+- **Kod:** [MIT](LICENSE), Copyright (c) 2026 JosephUz. Kodu kullanabilir, değiştirebilir, dağıtabilirsin.
+- **MIT dışında, tüm hakları saklıdır:** "Akın Var" ve "JosephUz" adları, logo ve simgeler. Ayrıntı: [TRADEMARKS.md](TRADEMARKS.md).
+- **Üçüncü taraf:** `vendor/` altındaki [three.js](https://github.com/mrdoob/three.js) MIT lisanslıdır (`vendor/THREE-LICENSE.txt`).
+
+> **In English:** The code is licensed under [MIT](LICENSE). The names "Akın Var" and "JosephUz", the logo and icons are **not** covered by MIT and are all rights reserved; see [TRADEMARKS.md](TRADEMARKS.md). Forks must use a different name and logo.

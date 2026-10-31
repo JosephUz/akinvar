@@ -28,31 +28,57 @@
     <div class="home-copy">
       <p class="eyebrow"><span class="dash"></span> İKİ TAKIM. BİR ÇAYIR. KALIN BİR SİS.</p>
       <h1>Akın var.<br><em>Safını tut.</em></h1>
-      <p class="intro">Her tur parayı böl: ekonomi, talim ya da asker.<br>Sisin içinde düşmanı bul, sağ kalanlarınla bayraklarına yüklen.</p>
-      <p class="eyebrow small">TAKIM</p>
-      <div id="sizes" class="opts five"></div>
-      <p class="eyebrow small">BAYRAK CANI</p>
-      <div id="hps" class="opts"></div>
-      <div class="home-buttons"><button id="play" class="primary">SAVAŞA BAŞLA <span>↗</span></button></div>
-      <div class="home-facts">
-        <div><b>01 / KUR</b><p>39 asker sınıfı, ekonomi ve talim.<br>Her tıklama bir bölük.</p></div>
-        <div><b>02 / BUL</b><p>Sis her şeyi saklar,<br>alan daralır.</p></div>
-        <div><b>03 / YÜKLEN</b><p>Sağ kalan her asker<br>bir bayraktan bir can götürür.</p></div>
+      <!-- STANDART oda akışı (josephuz/docs/oda-standardi.md): ADIN · tek başına · ÇEVRİM İÇİ · AÇIK ODALAR -->
+      <label class="ad-alan"><span class="eyebrow">ADIN</span><input id="ad" maxlength="16" autocomplete="nickname" spellcheck="false" placeholder="Komutan"></label>
+      <div class="tek">
+        <div class="secim"><span class="eyebrow">TAKIM</span><div id="sizes" class="opts five"></div></div>
+        <div class="secim"><span class="eyebrow">BAYRAK CANI</span><div id="hps" class="opts"></div></div>
+        <div class="secim"><span class="eyebrow">BOTLAR</span><div id="zors" class="opts three"></div></div>
+        <button id="play" class="primary">TEK BAŞINA <span>↗</span></button>
+      </div>
+      <div id="cevrim" class="kapali">
+        <div class="cevrim-bas"><span class="eyebrow">ÇEVRİM İÇİ</span><span id="cevrimici-sayi"></span></div>
+        <div class="cevrim-dugmeler">
+          <button id="hizli" class="primary" disabled>HIZLI KATIL <span>→</span></button>
+          <button id="oda-kur" class="outline" disabled>ODA KUR</button>
+          <button id="odaya-katil" class="outline" disabled>ODAYA KATIL</button>
+        </div>
+        <div class="kod-satir" id="kod-satir" hidden><input id="kod" maxlength="6" placeholder="ODA KODU" autocomplete="off" spellcheck="false"><button id="kod-katil" class="outline">KATIL</button></div>
+        <p id="cevrim-durum" role="status" aria-live="polite"></p>
+        <div id="acik-odalar" hidden><span class="eyebrow">AÇIK ODALAR <b id="oda-sayi"></b></span><div id="odalar"></div></div>
       </div>
     </div>
-    <footer>JOSEPHUZ OYUNLARI <span>BOTLARA KARŞI · 5v5'E KADAR</span></footer>
+    <footer>JOSEPHUZ OYUNLARI <span>BOTLARA KARŞI YA DA ÇEVRİM İÇİ · 5v5'E KADAR</span></footer>
+  </section>
+
+  <!-- Bekleme odası (oda standardı bölüm 6): Esc kapatmaz; Mavi ve Kırmızı sütunları, boş koltukları botlar oynar -->
+  <section id="bekleme" class="panel" hidden aria-labelledby="b-kod">
+    <span class="eyebrow" id="b-goz">ODA</span>
+    <div class="b-ust"><b id="b-kod"></b><button id="b-link" class="outline kucuk">Linki kopyala</button></div>
+    <p id="b-gorunur"></p>
+    <div id="koltuklar"></div>
+    <p id="b-ipucu"></p>
+    <div class="b-ayar">
+      <div class="secim"><span class="eyebrow">TAKIM</span><div class="dilim" id="b-takim"></div></div>
+      <div class="secim"><span class="eyebrow">BAYRAK CANI</span><div class="dilim" id="b-can"></div></div>
+      <div class="secim"><span class="eyebrow">BOTLAR</span><div class="dilim" id="b-zorluk"></div></div>
+      <div class="secim"><span class="eyebrow">ODA</span><div class="dilim" id="b-ozel"><button data-v="0">Herkese açık</button><button data-v="1">Özel</button></div></div>
+    </div>
+    <p id="b-bilgi"></p>
+    <div class="b-dugmeler"><button id="b-cik" class="outline">Odadan çık</button><button id="b-basla" class="primary">MAÇI BAŞLAT <span>↗</span></button><button id="b-bekle" class="outline" disabled>Kuranın başlatması bekleniyor</button></div>
   </section>
 
   <section id="prep" hidden>
     <div class="prep-head">
-      <div><span class="eyebrow" id="prep-round">TUR 1 · HAZIRLIK</span><h2>Ordunu kur.</h2></div>
-      <div class="gold"><span class="coin">◉</span><b id="prep-gold">0</b><small id="prep-income"></small></div>
+      <div class="prep-title"><span class="eyebrow" id="prep-round">TUR 1 · HAZIRLIK</span><h2>Ordunu kur.</h2></div>
+      <button id="eco" class="eco-card" title="Ekonomi: kalıcı, her tur gelirini artırır"></button>
+      <div class="gold"><img src="img/ikon/GOLD.png" alt=""><div><b id="prep-gold">0</b><small id="prep-income"></small></div></div>
       <div class="timer"><small>KALAN</small><b id="prep-time">0:45</b></div>
       <div id="prep-team"></div>
     </div>
-    <div id="perma"></div>
     <div id="cards"></div>
-    <p class="prep-hint">Sol tık: al · sağ tık: geri ver (tam iade) · Enter: hazır. Askerler tura geçmez; ekonomi, talim ve artan para kalır.</p>
+    <div id="info" aria-live="polite"></div>
+    <p class="prep-hint"><b>Sol tık</b> al · <b>sağ tık</b> geri ver (tam iade) · <b>⬆</b> geliştir: o sınıfın askerine +1 can, kalıcı · <b>Enter</b> hazır. Askerler tura geçmez; ekonomi, geliştirme ve artan para kalır.</p>
   </section>
   <div id="floats" aria-hidden="true"></div>
 
@@ -62,7 +88,7 @@
     <span id="sel-info">Seçili bölük yok</span>
     <div class="order-buttons">
       <button id="select-all" title="Hepsini seç (` ya da Ctrl A)">Hepsini seç</button>
-      <button id="stop" title="Dur, yakındakiyle çatış (Boşluk)">Dur</button>
+      <button id="stop" title="Dur, yerinde bekle (Boşluk)">Dur</button>
       <button id="pause" title="Duraklat (P)">Ⅱ</button>
       <button id="speed" title="Hız">1×</button>
     </div>
@@ -77,7 +103,7 @@
     <div class="row"><button id="fog">Sis: açık</button><button id="shadows">Gölge: açık</button></div>
   </aside>
 
-  <dialog id="menu-dialog" aria-labelledby="pause-title"><div class="dialog-inner"><span class="eyebrow">OYUN DURDU</span><h2 id="pause-title">Bir nefes arası.</h2>
+  <dialog id="menu-dialog" aria-labelledby="pause-title"><div class="dialog-inner"><span class="eyebrow" id="menu-eyebrow">OYUN DURDU</span><h2 id="pause-title">Bir nefes arası.</h2>
     <div class="menu-stack"><button id="resume" class="primary">DEVAM ET →</button><button id="menu-help">Kontroller <kbd>F1</kbd></button><button id="menu-home">Ana menü</button><a href="https://www.josephuz.com/">josephuz.com'a dön</a></div></div></dialog>
 
   <dialog id="end-dialog"><div class="dialog-inner"><span class="eyebrow" id="end-eyebrow"></span><h2 id="end-title"></h2><p id="end-copy"></p>
@@ -86,8 +112,9 @@
   <dialog id="help-dialog"><div class="dialog-inner"><button class="close" data-close aria-label="Kapat">×</button><span class="eyebrow">KÜÇÜK BİR KOMUTAN REHBERİ</span><h2>Ordun, senin kararın.</h2>
     <p class="controls-title">HAZIRLIK</p>
     <div class="controls">
-      <div><kbd>SOL TIK</kbd> Kartı al: bölük, ekonomi, talim</div>
+      <div><kbd>SOL TIK</kbd> Kartı al: bir bölük (20 asker)</div>
       <div><kbd>SAĞ TIK</kbd> Geri ver, para tam döner</div>
+      <div><kbd>⬆</kbd> Geliştir: o sınıfın her askerine +1 can</div>
       <div><kbd>ENTER</kbd> Hazır</div>
     </div>
     <p class="controls-title">SAVAŞ</p>
@@ -98,13 +125,13 @@
       <div><kbd>SAĞ TIK</kbd> Yere: yürü · düşmana: saldır · bayrağa: yüklen</div>
       <div><kbd>1 2 3 4</kbd> Kılıçlı · mızraklı · okçu · atlı seç</div>
       <div><kbd>` · CTRL A</kbd> Hepsini seç</div>
-      <div><kbd>BOŞLUK</kbd> Dur, yakındakiyle çatış</div>
+      <div><kbd>BOŞLUK</kbd> Dur, yerinde bekle</div>
       <div><kbd>W A S D</kbd> Kamerayı kaydır · orta tuşla sürükle</div>
       <div><kbd>TEKERLEK</kbd> Yaklaştır / uzaklaştır</div>
       <div><kbd>Q / E</kbd> Kamerayı çevir · <kbd>F</kbd> ordunun ortası</div>
-      <div><kbd>P</kbd> Duraklat · <kbd>ESC</kbd> seçimi bırak, menü</div>
+      <div><kbd>P</kbd> Duraklat (tek başına) · <kbd>ESC</kbd> seçimi bırak, menü</div>
     </div>
-    <p>Her tur gelir gelir: ◉ 1.000 ve ekonomi seviyesi başına ◉ 150. Talim, o ailedeki her askere +1 can verir; ekonomi ve talim kalıcıdır, askerler değil. Savaşta sis vardır, 30 saniye sonra alan daralır. Turu kazanan takımın sağ kalanları 10 saniye içinde rakip bayraklara gönderilir; her asker bir can götürür. Bayrağı düşen elenir.</p>
+    <p>Her tur ◉ 1.000 ve ekonomi seviyesi başına ◉ 150 gelir. Emir vermediğin bölükler botlar gibi ilerler ve gördükleri düşmana saldırır; emir verdiğin bölük sözünü dinler, Dur dersen yerinde bekler. Savaşta sis vardır, 30 saniye sonra alan daralır. Turu kazanan takımın sağ kalanları 10 saniye içinde rakip bayraklara gönderilir; her asker bir can götürür. Bayrağı düşen elenir.</p>
     <button class="primary" data-close>ANLADIM →</button></div></dialog>
 </div>
 <script type="module" src="./src/main.js"></script>

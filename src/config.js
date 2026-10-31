@@ -24,11 +24,18 @@ export const ZONE = { wait: 30, shrink: 150, damageEvery: 1.5 };
 
 // Tur: hazırlık → savaş → bayrak evresi.
 export const ECONOMY = { roundIncome: 1000, levelCost: 400, levelIncome: 150 }; // seviye n bedeli 400 × n
-export const TALIM = { cost: 500, max: 8 };                                       // seviye n bedeli 500 × n, +1 can
+export const TALIM = { cost: 500, max: 8 };                                       // Geliştir: sınıf başına, seviye n bedeli 500 × n, +1 can
 export const PREP_TIME = 45;
 export const FLAG_TIME = 10;
 export const FLAG_HP = [100, 1000, 10000, 100000];
 export const TEAM_SIZES = [1, 2, 3, 4, 5];
+
+// Bot zorluğu: hazırlıkta paranın ne kadarını harcar, rakibin ordusunun karşısını kurar mı.
+export const DIFFICULTY = {
+  kolay: { name: 'Kolay', spend: 0.7, counter: false },
+  orta: { name: 'Orta', spend: 0.85, counter: true },
+  zor: { name: 'Zor', spend: 1, counter: true },
+};
 
 export const TEAMS = [
   { name: 'Mavi', color: '#4f7fc4', shades: ['#4f7fc4', '#3f9fb8', '#6a6fd0', '#3d8a9a', '#7f95d8'], selected: '#b9d8ff' },
@@ -42,3 +49,6 @@ export const PERSONALITIES = [
   { key: 'dengeli', name: 'Dengeli' },
   { key: 'karsi', name: 'Karşı kurucu' },
 ];
+
+// Çevrim içi sunucu: evdeki PC'de Docker + Cloudflare Tunnel (akinvar-sunucu.josephuz.com). Yerelde sayfa sunucudan açılınca aynı adres kullanılır.
+export const SERVER = 'akinvar-sunucu.josephuz.com';

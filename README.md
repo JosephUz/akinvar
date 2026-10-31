@@ -31,7 +31,22 @@ Tarayıcıda Three.js ile çalışan, Total War esintili, tur tabanlı takım or
   - Bayrak evresi (10 sn): kazananların sağ kalanları seçilen rakip bayrağa koşar, her biri bir can götürür; gönderilmeyen dağılır.
   - Bot kişilikleri: Açgözlü, Akıncı, Dengeli, Karşı kurucu.
 
-Sıradaki: çevrim içi oda (oda standardı), ses, mobil.
+- **Faz 3 (çevrim içi ve hazırlık arayüzü):**
+  - josephuz oda standardı: ADIN, tek başına, ÇEVRİM İÇİ (hızlı katıl, oda kur, odaya katıl), açık odalar, bekleme odası (Mavi / Kırmızı koltuklar, takım, bayrak canı, bot zorluğu, açık / özel), davet linki ?oda=KOD, jetonla geri dönüş, kopanın yerine bot.
+  - Maçı sunucu yürütür (20 Hz); istemci savaşı sunucunun adımları ve emirleriyle aynen koşar, 3 sn'de bir ikili anlıkla düzeltir.
+  - Hazırlık: throneofcurse asker görselleri ve eşya ikonlu kartlar, en ucuz sol üstte, sınıf başına Geliştir, bilgi şeridi (malzeme, üstün / zayıf olduğu sınıflar).
+  - Fiyatlar throneofcurse üretim tariflerinden (odun, demir, çelik, deri, yem).
+  - Emirsiz bölükler botun yapay zekâsıyla savaşır; bot zorluğu Kolay / Orta / Zor.
+
+Sunucuyu başlat: Unknown command: "start"
+
+
+Did you mean one of these?
+  npm star # Mark your favorite packages
+  npm stars # View packages marked as favorites
+  npm start # Start a package
+To see a list of supported npm commands, run:
+  npm help (çevrim içi odalar aynı portta, ws). Henüz Docker ve tunnel yok.
 
 
 ## Lisans / License

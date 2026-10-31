@@ -1,29 +1,34 @@
 // Akın Var — maç: oyuncular, para, ekonomi, talim, bayrak canı ve tur döngüsü.
 // Tur: hazırlık (kartlarla bölük al) → savaş (sim.js) → bayrak evresi (kazanan sağ kalanlarını bayraklara yollar).
 // Askerler tura geçmez; turdan tura yalnız ekonomi seviyesi, talim ve biriken para taşınır.
-import { ECONOMY, TALIM, PERSONALITIES, TEAMS } from './config.js';
+import { ECONOMY, TALIM, PERSONALITIES, TEAMS, DIFFICULTY } from './config.js';
 import { CLASSES, CLASS_COUNT, HIT, FAMILIES } from './units.js';
+
+const zeros = () => new Array(CLASS_COUNT).fill(0); // sınıf başına geliştirme seviyesi
 import { createBattle, startFlagPhase, mulberry32, command, PER_BOLUK } from './sim.js';
 
 export const ecoCost = (level) => ECONOMY.levelCost * (level + 1);
 export const talimCost = (level) => TALIM.cost * (level + 1);
 export const income = (p) => ECONOMY.roundIncome + p.eco * ECONOMY.levelIncome;
 
-/** teamSize oyuncu takım başına; oyuncu 0 insan (Mavi), kalanı botlar. */
-export function createMatch({ teamSize = 1, flagHp = 100, seed = (Math.random() * 1e9) | 0, humans = [0] } = {}) {
+/**
+ * teamSize oyuncu takım başına. Tek başına: humans = [0] (oyuncu 0 insan, Mavi). Çevrim içi: seats[koltuk] = { name } ya da null (bot);
+ * koltuk sırası oyuncu sırasıdır (ilk teamSize Mavi, sonrakiler Kırmızı). Her oyuncunun bir bot kişiliği vardır: insan koparsa o oynar.
+ */
+export function createMatch({ teamSize = 1, flagHp = 100, difficulty = 'orta', seed = (Math.random() * 1e9) | 0, humans = [0], seats = null } = {}) {
   const rng = mulberry32(seed);
   const players = [];
   for (const team of [0, 1]) for (let k = 0; k < teamSize; k++) {
-    const id = players.length, human = humans.includes(id);
-    const pers = human ? null : PERSONALITIES[(rng() * PERSONALITIES.length) | 0];
+    const id = players.length, seat = seats ? seats[id] : null, human = seats ? !!seat : humans.includes(id);
+    const pers = PERSONALITIES[(rng() * PERSONALITIES.length) | 0];
     players.push({
-      id, team, human, personality: pers?.key ?? null,
-      name: human ? 'Sen' : `${pers.name}`, color: TEAMS[team].shades[k % 5],
-      gold: 0, eco: 0, talim: [0, 0, 0, 0], hp: flagHp, maxHp: flagHp, out: false,
-      units: [], ready: false, bought: { eco: 0, talim: [0, 0, 0, 0] }, lastUnits: [],
+      id, team, human, personality: pers.key, botName: pers.name,
+      name: seat?.name ?? (human ? 'Sen' : pers.name), color: TEAMS[team].shades[k % 5],
+      gold: 0, eco: 0, talim: zeros(), hp: flagHp, maxHp: flagHp, out: false,
+      units: [], ready: false, bought: { eco: 0, talim: zeros() }, lastUnits: [],
     });
   }
-  const m = { seed, rng, round: 0, flagHp, teamSize, players, phase: 'prep', battle: null, winner: -1, log: [] };
+  const m = { seed, rng, round: 0, flagHp, teamSize, difficulty: DIFFICULTY[difficulty] ? difficulty : 'orta', players, phase: 'prep', battle: null, winner: -1, log: [] };
   startRound(m);
   return m;
 }
@@ -33,7 +38,7 @@ export function alivePlayers(m, team) { return m.players.filter((p) => !p.out &&
 function startRound(m) {
   m.round++; m.phase = 'prep'; m.battle = null;
   for (const p of m.players) {
-    p.units = []; p.ready = p.out; p.bought = { eco: 0, talim: [0, 0, 0, 0] };
+    p.units = []; p.ready = p.out; p.bought = { eco: 0, talim: zeros() };
     if (!p.out) p.gold += income(p);
   }
   for (const p of m.players) if (!p.human && !p.out) botPrep(m, p);
@@ -61,16 +66,39 @@ export function refundEco(m, p) {
   if (m.phase !== 'prep' || p.ready || !p.bought.eco) return false;
   p.eco--; p.bought.eco--; p.gold += ecoCost(p.eco); return true;
 }
+/** Geliştir: o sınıfın her askerine +1 can (kalıcı). */
 export function buyTalim(m, p, family) {
+  if (!(family >= 0 && family < CLASS_COUNT)) return false;
   const lv = p.talim[family], cost = talimCost(lv);
   if (m.phase !== 'prep' || p.out || p.ready || lv >= TALIM.max || p.gold < cost) return false;
   p.gold -= cost; p.talim[family]++; p.bought.talim[family]++; return true;
 }
 export function refundTalim(m, p, family) {
+  if (!(family >= 0 && family < CLASS_COUNT)) return false;
   if (m.phase !== 'prep' || p.ready || !p.bought.talim[family]) return false;
   p.talim[family]--; p.bought.talim[family]--; p.gold += talimCost(p.talim[family]); return true;
 }
 export function setReady(m, p) { p.ready = true; }
+
+/** Çevrim içi: koltuktaki insan koptu (bot oynar) ya da döndü. Hazırlıktaysa ve hazır demediyse bot onun yerine alışveriş yapar. */
+export function setHuman(m, p, human, name) {
+  p.human = human;
+  if (human) { if (name) p.name = name; return; }
+  p.name = p.botName;
+  if (m.phase === 'prep' && !p.ready && !p.out) botPrep(m, p);
+}
+
+/** Bir takımın gözünden maç: rakiplerin bu turda aldıkları gizli. */
+export function matchView(m, team) {
+  return {
+    round: m.round, phase: m.phase, flagHp: m.flagHp, teamSize: m.teamSize, difficulty: m.difficulty, winner: m.winner, order: m.order, log: m.log.slice(-3),
+    players: m.players.map((p) => ({
+      id: p.id, team: p.team, human: p.human, name: p.name, color: p.color, personality: p.personality, botName: p.botName,
+      gold: p.team === team ? p.gold : 0, eco: p.eco, talim: p.talim, hp: p.hp, maxHp: p.maxHp, out: p.out, ready: p.ready,
+      units: p.team === team ? p.units : [], bought: p.bought, lastUnits: p.lastUnits,
+    })),
+  };
+}
 export const allReady = (m) => m.players.every((p) => p.ready);
 
 // ---------- savaş ----------
@@ -79,10 +107,12 @@ export function startBattle(m) {
   m.phase = 'battle';
   const active = m.players.filter((p) => !p.out);
   m.order = active.map((p) => p.id); // savaştaki oyuncu sırası → maç oyuncusu
-  m.battle = createBattle({
+  // Kurulum çevrim içi istemcilere aynen gider: aynı tohum ve aynı ordular aynı savaşı kurar.
+  m.battleSetup = {
     seed: (m.rng() * 1e9) | 0,
-    players: active.map((p) => ({ team: p.team, human: p.human, units: p.units, talim: p.talim })),
-  });
+    players: active.map((p) => ({ team: p.team, human: p.human, units: [...p.units], talim: [...p.talim] })),
+  };
+  m.battle = createBattle(m.battleSetup);
   for (const p of active) p.lastUnits = [...p.units];
   return m.battle;
 }
@@ -133,26 +163,27 @@ export function bolukOf(m, p) {
 
 const affordable = (p) => CLASSES.filter((c) => c.cost <= p.gold);
 
-function botPrep(m, p) {
+export function botPrep(m, p) {
   const rng = m.rng, r = m.round, enemies = m.players.filter((q) => q.team !== p.team && !q.out);
   // 1) Ekonomi
   const ecoTarget = { acgozlu: Math.min(8, r + 1), akinci: Math.floor(r / 4), dengeli: Math.ceil(r / 2), karsi: Math.floor(r / 2) }[p.personality];
   while (p.eco < ecoTarget && p.gold - ecoCost(p.eco) >= (p.personality === 'acgozlu' ? 150 : 500)) buyEco(m, p);
-  // 2) Talim: dengeli ve karşı kurucu, en çok bastığı ailede
+  // 2) Geliştir: dengeli ve karşı kurucu, en çok bastığı sınıfı
   if ((p.personality === 'dengeli' || p.personality === 'karsi') && r >= 3) {
-    const fam = favoriteFamily(p);
+    const fam = favoriteClass(p);
     if (fam >= 0 && p.gold - talimCost(p.talim[fam]) >= 400) buyTalim(m, p, fam);
   }
   // 3) Askerler: kalan parayla. Açgözlü ve Dengeli sıradaki ekonomi seviyesi için bir kısmını biriktirir.
   const saving = p.eco < ecoTarget ? ({ acgozlu: 0.6, dengeli: 0.3 }[p.personality] ?? 0) : 0;
-  const keep = Math.min(p.gold, ecoCost(p.eco)) * saving;
+  const level = DIFFICULTY[m.difficulty];
+  const keep = Math.max(Math.min(p.gold, ecoCost(p.eco)) * saving, p.gold * (1 - level.spend));
   const tier = Math.min(1, 0.25 + r * 0.12); // turlar ilerledikçe pahalı sınıflar
   let guard = 200;
   while (guard-- > 0) {
     const opts = affordable(p).filter((c) => p.gold - c.cost >= keep);
     if (!opts.length) break;
     let pick;
-    if (p.personality === 'karsi' && enemies.some((e) => e.lastUnits.length)) pick = counterPick(opts, enemies, rng);
+    if (p.personality === 'karsi' && level.counter && enemies.some((e) => e.lastUnits.length)) pick = counterPick(opts, enemies, rng);
     else if (p.personality === 'akinci') { const cheap = [...opts].sort((a, b) => a.cost - b.cost); pick = cheap[(rng() * Math.min(cheap.length, 12)) | 0]; }
     else {
       const sorted = [...opts].sort((a, b) => a.cost - b.cost);
@@ -164,9 +195,9 @@ function botPrep(m, p) {
   p.ready = true;
 }
 
-function favoriteFamily(p) {
-  const n = [0, 0, 0, 0];
-  for (const u of p.lastUnits.length ? p.lastUnits : p.units) n[CLASSES[u].family]++;
+function favoriteClass(p) {
+  const n = zeros();
+  for (const u of p.lastUnits.length ? p.lastUnits : p.units) n[u]++;
   const max = Math.max(...n);
   return max ? n.indexOf(max) : -1;
 }

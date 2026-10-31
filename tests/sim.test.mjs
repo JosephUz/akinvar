@@ -17,8 +17,9 @@ test('throneofcurse sınıfları: 39 sınıf, üstünlük tablosu, arkadan vuru�
   assert.equal(Math.round((hitChance(a, a, true) - hitChance(a, a, false)) * 100), 20);
 });
 
-test('bölükler 20 asker, can 3 + talim', () => {
-  const w = createBattle({ players: [army(0, 3, 'sw:ir-no-fo-no', true, [2, 0, 0, 0]), army(1, 2)] });
+test('bölükler 20 asker, can 3 + o sınıfın geliştirmesi', () => {
+  const talim = new Array(CLASSES.length).fill(0); talim[cls('sw:ir-no-fo-no')] = 2;
+  const w = createBattle({ players: [army(0, 3, 'sw:ir-no-fo-no', true, talim), army(1, 2)] });
   assert.equal(w.N, 5 * PER_BOLUK);
   assert.deepEqual(w.alive, [60, 40]);
   assert.equal(w.hp[0], 5);
@@ -70,6 +71,8 @@ test('aynı tohum ve aynı emirler aynı savaşı verir', () => {
 test('yürü emri bölüğü hedefe götürür', () => {
   const w = createBattle({ players: [army(0, 5, undefined, true), army(1, 5, undefined, true)] });
   step(w);
+  // öbür bölükler yerinde beklesin (emirsiz bölük bot gibi ilerler)
+  for (const t of [0, 1]) command(w, t, [...Array(w.B).keys()].filter((b) => w.bteam[b] === t && b !== 0), { type: 'stop' });
   command(w, 0, [0], { type: 'move', x: -10, z: 15 });
   for (let k = 0; k < 1200; k++) step(w);
   assert.ok(Math.hypot(w.cx[0] + 10, w.cz[0] - 15) < 2.5, `bölük hedefte olmalı: ${w.cx[0]}, ${w.cz[0]}`);

@@ -10,15 +10,17 @@ const CELL = 2;         // itme ve hedef arama ızgarası
 export const VCELL = 3; // görüş (sis) ızgarası
 const ORDER = { none: 0, move: 1, attack: 2 };
 
+// Durumu dışarıdan okunup yazılabilen (r.s) tohumlu üreteç: çevrim içi anlıklar üretecin yerini de taşır.
 export function mulberry32(seed) {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
+  const r = () => {
+    const a = r.s = (r.s + 0x6d2b79f5) >>> 0;
     let t = a;
     t = Math.imul(t ^ (t >>> 15), t | 1);
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+  r.s = seed >>> 0;
+  return r;
 }
 
 const spacingOf = (c) => SPACING * (c.mounted ? 1.55 : c.ranged ? 1.3 : 1);
@@ -26,9 +28,10 @@ export const bolukWidth = (c) => BOLUK.cols * spacingOf(c) + BOLUK_GAP;
 const bolukDepth = (c) => BOLUK.rows * spacingOf(c) + BOLUK_GAP * 1.5;
 
 /**
- * players: [{ team, human, units: [sınıf no, ...], talim: [kılıç, mızrak, okçu, atlı] }]
+ * players: [{ team, human, units: [sınıf no, ...], talim: [sınıf no → geliştirme seviyesi] }]
  * Her birim bir bölük (20 asker). Takımlar çember arenanın karşılıklı kenarlarında, oyuncular yan yana, merkeze bakar.
- * İnsan oyuncunun bölükleri emirsizken yerinde bekler; botlarınki sisin içinde arar.
+ * Her bölük, insanınki de, botun yapay zekâsıyla başlar: sisin içinde ilerler, gördüğü düşmana saldırır (şartlar eşit).
+ * Oyuncu bir bölüğe emir verince o bölük oyuncunun olur (bhuman): emri bitince yerinde bekler, yalnız yakındakine saldırır.
  */
 export function createBattle({ players, seed = 1 }) {
   const rng = mulberry32(seed);
@@ -72,13 +75,13 @@ export function createBattle({ players, seed = 1 }) {
       const p = players[bl.pi], centerLat = lateral + bl.width / 2;
       bl.list.forEach((c, k) => {
         const line = Math.floor(k / bl.perLine), col = k % bl.perLine, inLine = Math.min(bl.perLine, bl.list.length - line * bl.perLine);
-        w.bteam[b] = t; w.bcls[b] = c.index; w.bowner[b] = bl.pi; w.bhuman[b] = p.human ? 1 : 0; w.bsp[b] = spacingOf(c);
+        w.bteam[b] = t; w.bcls[b] = c.index; w.bowner[b] = bl.pi; w.bhuman[b] = 0; w.bsp[b] = spacingOf(c);
         w.bface[b] = w.oface[b] = t === 0 ? Math.PI / 2 : -Math.PI / 2;
         w.bx[b] = sign * (D - (bl.lines * bl.lineD) / 2 + line * bl.lineD + bl.lineD / 2);
         w.bz[b] = (centerLat + (col - (inLine - 1) / 2) * bl.lineW) * -sign;
         w.offx[b] = w.bx[b] - sign * D; w.offz[b] = w.bz[b];
         w.cx[b] = w.bx[b]; w.cz[b] = w.bz[b]; w.balive[b] = PER_BOLUK;
-        const hp = SOLDIER.hp + (p.talim?.[c.family] ?? 0);
+        const hp = SOLDIER.hp + (p.talim?.[c.index] ?? 0);
         for (let s = 0; s < PER_BOLUK; s++) {
           const i = b * PER_BOLUK + s;
           w.team[i] = t; w.boluk[i] = b; w.slot[i] = s; w.hp[i] = hp; w.face[i] = w.bface[b];
@@ -223,10 +226,17 @@ function retarget(w) {
  * move: {x, z} — bölükler hedefin çevresinde, yürüyüş yönüne dik saflar halinde dizilir.
  * attack: {target} — düşman bölüğü. stop: emirleri bırak, yakındaki düşmana kendiliğinden saldır.
  * flag: {flag} — bayrak evresinde bölüğün sağ kalanları o bayrağa koşar.
+ * bot: {} — oyuncu koptu, bölüklerini bot yönetir (emirleri bırakılır). human: {} — döndü (bölükler bot gibi sürer, ilk emirde oyuncunun olur).
+ * owner verilirse yalnız o oyuncunun (savaştaki sırası) bölükleri emir alır (çevrim içi denetim).
  */
-export function command(w, team, list, cmd) {
-  list = list.filter((b) => w.bteam[b] === team && w.balive[b]);
+export function command(w, team, list, cmd, owner = -1) {
+  list = list.filter((b) => Number.isInteger(b) && b >= 0 && b < w.B && w.bteam[b] === team && w.balive[b] && (owner < 0 || w.bowner[b] === owner));
   if (!list.length) return;
+  if (cmd.type === 'bot' || cmd.type === 'human') {
+    if (cmd.type === 'bot') for (const b of list) { w.bhuman[b] = 0; w.border[b] = ORDER.none; w.goal[b] = 0; }
+    return;
+  }
+  if (cmd.type !== 'flag') for (const b of list) w.bhuman[b] = 1; // emir alan bölük oyuncunun olur
   if (cmd.type === 'flag') {
     if (w.phase !== 'flag' || !w.flags[cmd.flag] || w.flags[cmd.flag].hp <= 0) return;
     for (const b of list) w.bflag[b] = cmd.flag;
@@ -449,6 +459,45 @@ function pickMember(w, b, rng) {
 
 function kill(w, i) {
   w.hp[i] = 0; w.diedAt[i] = w.t; w.alive[w.team[i]]--;
+}
+
+// ---------- çevrim içi anlık ----------
+// Sunucu birkaç saniyede bir savaşın tam durumunu yollar; istemcinin kayan sayıları farklı motorda azıcık ayrışsa bile
+// bir sonraki anlıkta düzelir. Biçim: [başlık uzunluğu u32][başlık JSON][4'e hizalı diziler].
+const SOLDIER_FIELDS = ['x', 'z', 'face', 'cd', 'swing', 'zoneT', 'diedAt', 'hp', 'spent', 'target', 'slot'];
+const BOLUK_FIELDS = ['bx', 'bz', 'bface', 'cx', 'cz', 'oface', 'gx', 'gz', 'btarget', 'otarget', 'bflag', 'bengaged', 'border', 'goal', 'bhuman', 'balive'];
+
+export function snapshot(w) {
+  const arrays = [...SOLDIER_FIELDS, ...BOLUK_FIELDS].map((k) => w[k]).concat(w.vis);
+  const head = new TextEncoder().encode(JSON.stringify({
+    t: w.t, tick: w.tick, zone: w.zone, winner: w.winner, phase: w.phase, flagT: w.flagT, alive: w.alive, rng: w.rng.s,
+    arrows: w.arrows, flags: w.flags, N: w.N, B: w.B,
+  }));
+  const pad = (n) => (n + 3) & ~3;
+  let size = 4 + pad(head.length);
+  for (const a of arrays) size += pad(a.byteLength);
+  const out = new Uint8Array(size);
+  new DataView(out.buffer).setUint32(0, head.length, true);
+  out.set(head, 4);
+  let o = 4 + pad(head.length);
+  for (const a of arrays) { out.set(new Uint8Array(a.buffer, a.byteOffset, a.byteLength), o); o += pad(a.byteLength); }
+  return out;
+}
+
+export function applySnapshot(w, bytes) {
+  const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  const len = new DataView(u8.buffer, u8.byteOffset, u8.byteLength).getUint32(0, true);
+  const h = JSON.parse(new TextDecoder().decode(u8.subarray(4, 4 + len)));
+  if (h.N !== w.N || h.B !== w.B) return false;
+  const pad = (n) => (n + 3) & ~3;
+  let o = 4 + pad(len);
+  for (const a of [...SOLDIER_FIELDS, ...BOLUK_FIELDS].map((k) => w[k]).concat(w.vis)) {
+    new Uint8Array(a.buffer, a.byteOffset, a.byteLength).set(u8.subarray(o, o + a.byteLength)); o += pad(a.byteLength);
+  }
+  w.px.set(w.x); w.pz.set(w.z);
+  Object.assign(w, { t: h.t, tick: h.tick, zone: h.zone, winner: h.winner, phase: h.phase, flagT: h.flagT, alive: h.alive, arrows: h.arrows, flags: h.flags });
+  w.rng.s = h.rng;
+  return true;
 }
 
 export { FAMILIES };

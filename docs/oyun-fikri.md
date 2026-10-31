@@ -101,7 +101,7 @@ Hazırlık ekranı alt bant değil, ekranı dolduran bir kart ızgarasıdır.
 - **Talim** kalıcı bir yükseltmedir, ekonomi gibi turlar boyunca korunur. **Her asker ailesinin talimi ayrıdır** ✅ (kılıçlı, mızraklı, okçu, atlı). Her seviye o ailenin askerlerine **+1 can** verir.
   - throneofcurse'te en yüksek can 11'dir (yetenek 100 → 10 + 1 ustalık bonusu).
   - Öneri: talim 8 seviye olur (3 → 11 can).
-  - Seviye bedeli: ~~500 × n~~ → bölük fiyatı × 2 × n (sınıfa göre; Silahsız ◉80, Atlı · Çelik kılıç ◉860) ✅.
+  - Seviye bedeli: ~~500 × n~~ → bölük fiyatı × 2 × n (sınıfa göre; Silahsız ◉80, Atlı · Çelik kılıç ◉1.160) ✅.
 
 ## Asker çeşitliliği ve dövüş (throneofcurse) ✅
 
@@ -131,7 +131,7 @@ Zorluk ayarı kişilik karışımı ve karar kalitesiyle yapılır. Savaşta bot
 
 - **Talim → Geliştir, sınıf başına:** her kartın sağ üstünde ⬆ Geliştir; o sınıfın askerine +1 can (500 × n, en çok 8). Ayrı talim kartları kalktı.
 - **Kart sırası:** fiyata göre, en ucuz sol üstte. Kartlarda throneofcurse asker görseli ve eşya ikonları; altta bilgi şeridi (malzeme, üstün / zayıf olduğu sınıflar).
-- **Fiyat:** throneofcurse üretim tariflerinden ham madde (odun 1, demir 2, deri 1,5, yem 0,5) → 40 + 36 × değer^0,35, 10'a yuvarlı. Bir çelik bölüğü ~3 demir bölüğü fiyatına ve onları çoğunlukla yener.
+- **Fiyat:** ~~ham maddeden 40 + 36 × değer^0,35~~ → önce silah seviyesi: silahsız ◉40 < tahta (tahta mızrak, yay) ◉80–140 < demir (kılıç, mızrak, iki el, uzun yay, arbalet) ◉150–320 < çelik (çelik silahlar, Türk yayı) ◉330–580. Bir seviyenin en pahalısı bir üstün en ucuzundan ucuz. Seviye içinde kalkan (tahta 20, demir 30, çelik 50), zırh (deri 30, zincir 50, çelik 100), at (40–80, zırhıyla) ve silahın ham maddesine göre 10'ar adım.
 - **Eşit şartlar:** emirsiz bölük, oyuncununki de, botun yapay zekâsıyla savaşır; emir alan bölük oyuncunun olur (Dur: yerinde bekler).
 - **Bot zorluğu:** Kolay (paranın %70'i, karşı kurmaz) · Orta (%85) · Zor (hepsi).
 - **Çevrim içi:** oda standardı; maçı sunucu yürütür, istemci aynı adımları koşar.

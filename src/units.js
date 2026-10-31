@@ -36,12 +36,35 @@ const ARMORS = {
   st: { name: 'Çelik zırh', speed: 0.8, horse: 1.7, item: 'STEEL_ARMOR_SET', img: 'st_as', horseItem: 'STEEL_ARMORED_HORSE' },
 };
 
-// Fiyat (bir bölük, 20 asker): asker başı eşyaların ham maddesinden. Demir odundan, deri yemden değerli.
-// Çelik ham maddede çok tuttuğu için üsle (0,35) sıkıştırılır: sıra korunur, ama çelik bölüğü parasına göre güçlü kalır
-// (bir çelik bölüğü ~3 demir bölüğü fiyatına, savaşta 3 demir bölüğünü çoğunlukla yener).
+// Fiyat (bir bölük, 20 asker) önce silahın seviyesinden: silahsız < tahta < demir < çelik. Bir seviyenin en pahalısı bile
+// bir üst seviyenin en ucuzundan ucuzdur. Yay tahta, uzun yay ve arbalet demir, Türk yayı çelik seviyesindedir.
+// Seviye içinde fiyatı kalkan, zırh (deri < zincir < çelik) ve at şekillendirir; aynı seviyedeki silahlar
+// throneofcurse ham maddesine göre 10'ar artar (ör. demirde mızrak < uzun yay < arbalet < kılıç < iki el kılıcı).
 const RAW_VALUE = { wood: 1, iron: 2, cattle: 1.5, wheat: 0.5 };
-const PRICE = { base: 40, k: 36, exp: 0.35 };
-export const priceOf = (value) => Math.round((PRICE.base + PRICE.k * value ** PRICE.exp) / 10) * 10;
+const WEAPON_TIER = { ua: 0, 'sp:wo': 1, bo: 1, 'sp:ir': 2, 'sw:ir': 2, '2s:ir': 2, lb: 2, cb: 2, 'sp:st': 3, 'sw:st': 3, '2s:st': 3, tb: 3 };
+const PRICE = {
+  first: [40, 80], gap: 10, weaponStep: 10,
+  shield: { no: 0, 'sh:wo': 20, 'sh:ir': 30, 'sh:st': 50 },
+  armor: { no: 0, le: 30, ch: 50, st: 100 },
+  horse: { no: 40, le: 50, ch: 60, st: 80 },                      // at, binicinin zırhıyla aynı katmandan zırhlı
+};
+const valueOf = (item) => { const m = MALZEME[item] ?? {}; return Object.keys(RAW_VALUE).reduce((s, k) => s + (m[k] ?? 0) * RAW_VALUE[k], 0); };
+/** Bütün sınıfların fiyatı birlikte: her seviyenin tabanı bir alttakinin en pahalısının hemen üstü. */
+function priceAll(list) {
+  const extra = (c) => {
+    const p = parse(c.key), same = Object.keys(WEAPON_TIER).filter((k) => WEAPON_TIER[k] === WEAPON_TIER[p.w]);
+    const rank = same.map((k) => valueOf(WEAPONS[k].item)).sort((a, b) => a - b).indexOf(valueOf(WEAPONS[p.w].item));
+    return rank * PRICE.weaponStep + PRICE.shield[p.sh] + PRICE.armor[p.armor] + (p.mounted ? PRICE.horse[p.armor] : 0);
+  };
+  let base = 0;
+  for (let tier = 0; tier <= 3; tier++) {
+    const group = list.filter((c) => WEAPON_TIER[parse(c.key).w] === tier);
+    base = Math.max(PRICE.first[tier] ?? 0, base);
+    for (const c of group) { c.tier = tier; c.cost = base + extra(c); }
+    base = Math.max(...group.map((c) => c.cost)) + PRICE.gap;
+  }
+  return list;
+}
 
 // throneofcurse warriors/*.png görsel kodu: en ayrıntılıdan genele (SoldierVisual.tsx resolveSoldierVisualCode)
 const VISUALS = new Set(['wo_sp', 'wo_sp_wo_sh', 'ir_sp', 'ir_sp_ir_sh', 'ir_sp_ir_sh_le_as', 'ir_sp_ir_sh_ch_as', 'ir_1s', 'ir_1s_ir_sh', 'ir_1s_ir_sh_le_as',
@@ -77,7 +100,6 @@ function build(key) {
   // Çelik külçesi = 6 demir + 3 yakacak (12 odun); görünür dökümde çeliğin içindeki demir ve odun ayrıca sayılmaz.
   const mat = { wood: 0, iron: 0, cattle: 0, wheat: 0, steel: 0 };
   for (const it of items) for (const k in mat) mat[k] += MALZEME[it]?.[k] ?? 0;
-  const value = mat.wood * RAW_VALUE.wood + mat.iron * RAW_VALUE.iron + mat.cattle * RAW_VALUE.cattle + mat.wheat * RAW_VALUE.wheat;
   const materials = {
     wood: Math.max(0, Math.round(mat.wood - mat.steel * 12)), iron: Math.max(0, Math.round(mat.iron - mat.steel * 6)),
     steel: Math.round(mat.steel), leather: Math.round(mat.cattle / 3), wheat: Math.round(mat.wheat),
@@ -89,12 +111,12 @@ function build(key) {
     title: (p.mounted ? 'Atlı · ' : '') + wpn.name,
     detail: [shield?.name, arm.name].filter(Boolean).join(' · ') || 'Zırhsız',
     reach: Math.max(0.85, wpn.range / PX), cycle: wpn.cycle / 1000,
-    vision: Math.max(22, wpn.vision / PX), speed, cost: priceOf(value), items, materials, img: visualOf(p, wpn, shield, arm),
+    vision: Math.max(22, wpn.vision / PX), speed, cost: 0, items, materials, img: visualOf(p, wpn, shield, arm),
   };
 }
 
-// Kart sırası: ucuzdan pahalıya (en ucuz sol üstte), eşit fiyatta aileye göre.
-export const CLASSES = Object.keys(USTUNLUK).map(build)
+// Kart sırası: ucuzdan pahalıya (en ucuz sol üstte; böylece tahta, demir, çelik sırayla), eşit fiyatta aileye göre.
+export const CLASSES = priceAll(Object.keys(USTUNLUK).map(build))
   .sort((a, b) => a.cost - b.cost || a.family - b.family || a.key.localeCompare(b.key))
   .map((c, i) => ({ ...c, index: i }));
 export const CLASS_BY_KEY = Object.fromEntries(CLASSES.map((c) => [c.key, c]));

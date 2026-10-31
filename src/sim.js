@@ -1,12 +1,12 @@
 // Akın Var — savaş simülasyonu. Tarayıcıdan bağımsız, tohumlu ve belirlenimci: aynı tohum ve aynı emirler aynı savaşı verir.
-// İki katman: bölük (emir, yürüyüş, hedef, çatışma) ve asker (yuvasını izler, yakın dövüşte hedef seçer, vurur).
+// İki katman: bölük (emir, yürüyüş, hedef, çatışma) ve asker (yuvasını izler, yakın dövüşte hedef seçer, vurur ya da ok atar).
 // Asker verisi düz dizilerde tutulur; 10 binlerce asker için nesne oluşturulmaz.
-import { TICK, BOLUK, SPACING, BOLUK_GAP, SOLDIER, ENGAGE, RETARGET, VISION, AUTO_RANGE, ZONE, MAX_SOLDIERS } from './config.js';
+// Savaş bitince aynı dünyada bayrak evresi sürer: kazananların askerleri seçilen bayrağa koşar, her biri bir can götürür.
+import { TICK, BOLUK, SPACING, BOLUK_GAP, SOLDIER, ARROW, ENGAGE, RETARGET, AUTO_RANGE, ZONE, FLAG_TIME } from './config.js';
+import { CLASSES, FAMILIES, hitChance } from './units.js';
 
 export const PER_BOLUK = BOLUK.cols * BOLUK.rows;
-export const BOLUK_W = BOLUK.cols * SPACING + BOLUK_GAP;
-export const BOLUK_D = BOLUK.rows * SPACING + BOLUK_GAP * 1.5;
-const CELL = 2;        // itme ve hedef arama ızgarası
+const CELL = 2;         // itme ve hedef arama ızgarası
 export const VCELL = 3; // görüş (sis) ızgarası
 const ORDER = { none: 0, move: 1, attack: 2 };
 
@@ -21,72 +21,92 @@ export function mulberry32(seed) {
   };
 }
 
-/**
- * İki takım, her biri `soldiers / 2` asker. Ordular çember arenanın karşılıklı kenarlarında, merkeze bakar.
- * `human`: hangi takımları oyuncu yönetir (emirsiz bölükleri yerinde bekler); ötekiler botun yapay zekasıyla oynar.
- */
-export function createBattle({ soldiers = 2000, seed = 1, human = [true, false] } = {}) {
-  const perTeam = Math.max(1, Math.ceil(Math.min(soldiers, MAX_SOLDIERS) / 2 / PER_BOLUK));
-  const B = perTeam * 2, N = B * PER_BOLUK;
-  const rng = mulberry32(seed);
+const spacingOf = (c) => SPACING * (c.mounted ? 1.55 : c.ranged ? 1.3 : 1);
+export const bolukWidth = (c) => BOLUK.cols * spacingOf(c) + BOLUK_GAP;
+const bolukDepth = (c) => BOLUK.rows * spacingOf(c) + BOLUK_GAP * 1.5;
 
+/**
+ * players: [{ team, human, units: [sınıf no, ...], talim: [kılıç, mızrak, okçu, atlı] }]
+ * Her birim bir bölük (20 asker). Takımlar çember arenanın karşılıklı kenarlarında, oyuncular yan yana, merkeze bakar.
+ * İnsan oyuncunun bölükleri emirsizken yerinde bekler; botlarınki sisin içinde arar.
+ */
+export function createBattle({ players, seed = 1 }) {
+  const rng = mulberry32(seed);
+  // Dizilim sırası: önde yakın dövüş, arkada okçu, en arkada atlı.
+  const rank = (c) => (c.mounted ? 2 : c.ranged ? 1 : 0);
+  const blocks = players.map((p, pi) => {
+    const list = p.units.map((u) => CLASSES[u]).sort((a, b) => rank(a) - rank(b) || a.index - b.index);
+    const k = list.length, perLine = Math.min(k, Math.max(3, Math.ceil(Math.sqrt(k) * 1.6)));
+    const lineW = Math.max(...list.map(bolukWidth), 8), lineD = Math.max(...list.map(bolukDepth), 6);
+    return { pi, list, perLine, lines: Math.ceil(k / perLine) || 0, width: perLine * lineW, lineW, lineD };
+  });
+  const teamWidth = [0, 1].map((t) => blocks.filter((b) => players[b.pi].team === t).reduce((s, b) => s + b.width + 10, 0));
+  const maxDepth = Math.max(10, ...blocks.map((b) => b.lines * b.lineD));
+  const radius = Math.max(70, Math.max(...teamWidth) * 0.6 + 20, maxDepth + 55);
+  const D = radius - maxDepth / 2 - 12;
+
+  const B = blocks.reduce((s, b) => s + b.list.length, 0), N = B * PER_BOLUK;
   const w = {
-    t: 0, tick: 0, seed, rng, N, B, winner: -1, human,
+    t: 0, tick: 0, seed, rng, N, B, winner: -1, phase: 'battle', players: players.length, radius, zone: radius,
     // asker
     x: new Float32Array(N), z: new Float32Array(N), px: new Float32Array(N), pz: new Float32Array(N),
     face: new Float32Array(N), hp: new Int8Array(N), team: new Uint8Array(N), boluk: new Int32Array(N),
     slot: new Int16Array(N), target: new Int32Array(N).fill(-1), cd: new Float32Array(N),
-    swing: new Float32Array(N), diedAt: new Float32Array(N).fill(-1), zoneT: new Float32Array(N),
+    swing: new Float32Array(N), diedAt: new Float32Array(N).fill(-1), zoneT: new Float32Array(N), spent: new Uint8Array(N),
     // bölük
     bx: new Float32Array(B), bz: new Float32Array(B), bface: new Float32Array(B), bteam: new Uint8Array(B),
-    bkind: new Uint8Array(B), btarget: new Int32Array(B).fill(-1), bengaged: new Uint8Array(B), balive: new Int16Array(B),
+    bcls: new Uint8Array(B), bowner: new Uint8Array(B), bhuman: new Uint8Array(B), bsp: new Float32Array(B),
+    btarget: new Int32Array(B).fill(-1), bengaged: new Uint8Array(B), balive: new Int16Array(B),
     cx: new Float32Array(B), cz: new Float32Array(B),
     border: new Uint8Array(B), otarget: new Int32Array(B).fill(-1), oface: new Float32Array(B),
     goal: new Uint8Array(B), gx: new Float32Array(B), gz: new Float32Array(B), offx: new Float32Array(B), offz: new Float32Array(B),
-    alive: [0, 0], radius: 0, zone: 0,
+    bflag: new Int32Array(B).fill(-1),
+    alive: [0, 0], arrows: [], flags: [], flagT: 0,
   };
 
-  // Dizilim: her ordu önde geniş bir cephe, arkada saflar; merkeze bakar. Mavi batıda, Kırmızı doğuda.
-  const perLine = Math.min(perTeam, Math.max(4, Math.ceil(Math.sqrt(perTeam) * 2.2)));
-  const lines = Math.ceil(perTeam / perLine), depth = lines * BOLUK_D;
-  w.radius = Math.max(85, perLine * BOLUK_W * 0.62 + 20, depth + 60);
-  w.zone = w.radius;
-  const D = w.radius - depth / 2 - 12;
-  for (let b = 0; b < B; b++) {
-    const team = b < perTeam ? 0 : 1, k = b % perTeam, line = Math.floor(k / perLine), col = k % perLine;
-    const sign = team === 0 ? -1 : 1, inLine = Math.min(perLine, perTeam - line * perLine);
-    w.bteam[b] = team;
-    w.bkind[b] = line % 2;           // şimdilik ön saflar mızraklı, arkadakiler kılıçlı
-    w.bface[b] = w.oface[b] = team === 0 ? Math.PI / 2 : -Math.PI / 2;
-    w.bx[b] = sign * (D - depth / 2 + line * BOLUK_D + BOLUK_D / 2);
-    w.bz[b] = (col - (inLine - 1) / 2) * BOLUK_W * -sign;
-    w.offx[b] = w.bx[b] - sign * D; w.offz[b] = w.bz[b];
-    w.cx[b] = w.bx[b]; w.cz[b] = w.bz[b];
-    w.balive[b] = PER_BOLUK;
-    for (let s = 0; s < PER_BOLUK; s++) {
-      const i = b * PER_BOLUK + s;
-      w.team[i] = team; w.boluk[i] = b; w.slot[i] = s; w.hp[i] = SOLDIER.hp; w.face[i] = w.bface[b];
-      const p = slotPos(w, b, s);
-      w.x[i] = w.px[i] = p.x + (rng() - 0.5) * 0.2;
-      w.z[i] = w.pz[i] = p.z + (rng() - 0.5) * 0.2;
-      w.cd[i] = rng();
+  let b = 0;
+  for (const t of [0, 1]) {
+    const sign = t === 0 ? -1 : 1, mine = blocks.filter((bl) => players[bl.pi].team === t);
+    let lateral = -(teamWidth[t] - 10) / 2;
+    for (const bl of mine) {
+      const p = players[bl.pi], centerLat = lateral + bl.width / 2;
+      bl.list.forEach((c, k) => {
+        const line = Math.floor(k / bl.perLine), col = k % bl.perLine, inLine = Math.min(bl.perLine, bl.list.length - line * bl.perLine);
+        w.bteam[b] = t; w.bcls[b] = c.index; w.bowner[b] = bl.pi; w.bhuman[b] = p.human ? 1 : 0; w.bsp[b] = spacingOf(c);
+        w.bface[b] = w.oface[b] = t === 0 ? Math.PI / 2 : -Math.PI / 2;
+        w.bx[b] = sign * (D - (bl.lines * bl.lineD) / 2 + line * bl.lineD + bl.lineD / 2);
+        w.bz[b] = (centerLat + (col - (inLine - 1) / 2) * bl.lineW) * -sign;
+        w.offx[b] = w.bx[b] - sign * D; w.offz[b] = w.bz[b];
+        w.cx[b] = w.bx[b]; w.cz[b] = w.bz[b]; w.balive[b] = PER_BOLUK;
+        const hp = SOLDIER.hp + (p.talim?.[c.family] ?? 0);
+        for (let s = 0; s < PER_BOLUK; s++) {
+          const i = b * PER_BOLUK + s;
+          w.team[i] = t; w.boluk[i] = b; w.slot[i] = s; w.hp[i] = hp; w.face[i] = w.bface[b];
+          const q = slotPos(w, b, s);
+          w.x[i] = w.px[i] = q.x + (rng() - 0.5) * 0.2;
+          w.z[i] = w.pz[i] = q.z + (rng() - 0.5) * 0.2;
+          w.cd[i] = rng() * c.cycle;
+        }
+        w.alive[t] += PER_BOLUK; b++;
+      });
+      lateral += bl.width + 10;
     }
   }
-  w.alive = [perTeam * PER_BOLUK, perTeam * PER_BOLUK];
 
-  const span = Math.ceil((w.radius * 2) / CELL) + 2;
-  w.grid = { span, off: w.radius + CELL, head: new Int32Array(span * span), next: new Int32Array(N) };
-  const vs = Math.ceil((w.radius * 2) / VCELL) + 2;
-  w.vgrid = { span: vs, off: w.radius + VCELL };
+  const span = Math.ceil((radius * 2) / CELL) + 2;
+  w.grid = { span, off: radius + CELL, head: new Int32Array(span * span), next: new Int32Array(Math.max(1, N)) };
+  const vs = Math.ceil((radius * 2) / VCELL) + 2;
+  w.vgrid = { span: vs, off: radius + VCELL };
   w.vis = [new Uint8Array(vs * vs), new Uint8Array(vs * vs)];
   updateVision(w);
+  if (w.alive[0] === 0 || w.alive[1] === 0) w.winner = w.alive[0] > 0 ? 0 : w.alive[1] > 0 ? 1 : 2;
   return w;
 }
 
 // Yuva: ön sıra 0, sütunlar bölüğün sağından soluna. İleri yön (sin f, cos f).
 function slotPos(w, b, s) {
-  const c = s % BOLUK.cols, r = Math.floor(s / BOLUK.cols), f = w.bface[b];
-  const lx = (c - (BOLUK.cols - 1) / 2) * SPACING, lz = ((BOLUK.rows - 1) / 2 - r) * SPACING;
+  const c = s % BOLUK.cols, r = Math.floor(s / BOLUK.cols), f = w.bface[b], sp = w.bsp[b];
+  const lx = (c - (BOLUK.cols - 1) / 2) * sp, lz = ((BOLUK.rows - 1) / 2 - r) * sp;
   const sf = Math.sin(f), cf = Math.cos(f);
   return { x: w.bx[b] + cf * lx + sf * lz, z: w.bz[b] - sf * lx + cf * lz };
 }
@@ -111,20 +131,20 @@ function nearestEnemy(w, i, range) {
   for (let cz = Math.max(0, gz - r); cz <= Math.min(span - 1, gz + r); cz++)
     for (let cx = Math.max(0, gx - r); cx <= Math.min(span - 1, gx + r); cx++)
       for (let j = head[cz * span + cx]; j !== -1; j = next[j]) {
-        if (w.team[j] === team) continue;
+        if (w.team[j] === team || w.hp[j] <= 0) continue; // ızgara adım başında kuruldu, arada ölen olabilir
         const dx = w.x[j] - x, dz = w.z[j] - z, d = dx * dx + dz * dz;
         if (d < bestD) { bestD = d; best = j; }
       }
   return best;
 }
 
-// Görüş: her canlı askerin çevresi. Ayrık askerler (kovalayan, kaçan) da görür.
-// Önce bölük merkezinden geniş daire, sonra merkezden uzaklaşmış askerler için küçük daire.
+// Görüş: bölük merkezinden sınıfın görüşü kadar; merkezden uzaklaşmış askerler de çevresini görür.
 function updateVision(w) {
-  const { span, off } = w.vgrid, r = Math.ceil(VISION / VCELL), r2 = (VISION / VCELL) ** 2;
+  const { span, off } = w.vgrid;
   for (const v of w.vis) v.fill(0);
-  const mark = (team, x, z, rr, rr2) => {
-    const v = w.vis[team], gx = Math.floor((x + off) / VCELL), gz = Math.floor((z + off) / VCELL);
+  const mark = (team, x, z, radius) => {
+    const v = w.vis[team], rr = Math.ceil(radius / VCELL), rr2 = (radius / VCELL) ** 2;
+    const gx = Math.floor((x + off) / VCELL), gz = Math.floor((z + off) / VCELL);
     for (let dz = -rr; dz <= rr; dz++) {
       const cz = gz + dz; if (cz < 0 || cz >= span) continue;
       for (let dx = -rr; dx <= rr; dx++) {
@@ -133,12 +153,11 @@ function updateVision(w) {
       }
     }
   };
-  for (let b = 0; b < w.B; b++) if (w.balive[b]) mark(w.bteam[b], w.cx[b], w.cz[b], r, r2);
-  const sr = Math.ceil(r / 2), sr2 = r2 / 4, far2 = (VISION / 2) ** 2;
+  for (let b = 0; b < w.B; b++) if (w.balive[b]) mark(w.bteam[b], w.cx[b], w.cz[b], CLASSES[w.bcls[b]].vision);
   for (let i = 0; i < w.N; i++) {
     if (w.hp[i] <= 0) continue;
     const b = w.boluk[i];
-    if ((w.x[i] - w.cx[b]) ** 2 + (w.z[i] - w.cz[b]) ** 2 > far2) mark(w.team[i], w.x[i], w.z[i], sr, sr2);
+    if ((w.x[i] - w.cx[b]) ** 2 + (w.z[i] - w.cz[b]) ** 2 > 121) mark(w.team[i], w.x[i], w.z[i], 11);
   }
 }
 
@@ -161,11 +180,12 @@ function retarget(w) {
     cx[b] += w.x[i]; cz[b] += w.z[i];
   }
   for (let b = 0; b < w.B; b++) if (w.balive[b]) { cx[b] /= w.balive[b]; cz[b] /= w.balive[b]; }
+  if (w.phase !== 'battle') return;
 
   for (let b = 0; b < w.B; b++) {
     if (!w.balive[b]) { w.btarget[b] = -1; w.border[b] = ORDER.none; continue; }
-    const team = w.bteam[b];
-    if (w.bengaged[b]) { w.bx[b] = cx[b]; w.bz[b] = cz[b]; }
+    const team = w.bteam[b], cls = CLASSES[w.bcls[b]];
+    if (w.bengaged[b] && !cls.ranged) { w.bx[b] = cx[b]; w.bz[b] = cz[b]; }
     if (w.border[b] === ORDER.attack) {
       const o = w.otarget[b];
       if (o >= 0 && w.balive[o]) { w.btarget[b] = o; continue; }
@@ -173,8 +193,9 @@ function retarget(w) {
     }
     if (w.border[b] === ORDER.move) { w.btarget[b] = -1; continue; }
 
-    // Emirsiz: görünen en yakın düşman bölüğü. Oyuncunun bölükleri yalnız yakındakine kendiliğinden gider.
-    const limit = w.human[team] ? AUTO_RANGE * AUTO_RANGE : Infinity;
+    // Emirsiz: görünen en yakın düşman bölüğü. Oyuncunun bölükleri yalnız yakındakine (okçu menzilindekine) kendiliğinden gider.
+    const reachAuto = Math.max(AUTO_RANGE, cls.reach + 4);
+    const limit = w.bhuman[b] ? reachAuto * reachAuto : Infinity;
     let best = -1, bestD = limit;
     for (let o = 0; o < w.B; o++) {
       if (!w.balive[o] || w.bteam[o] === team || !visibleTo(w, team, cx[o], cz[o])) continue;
@@ -186,7 +207,7 @@ function retarget(w) {
 
     // Düşman görünmüyor: bot ordusu dizilişini bozmadan merkeze yürür (alan daralırsa daha da sıkışır).
     const zr = w.zone, dist = Math.hypot(w.bx[b], w.bz[b]);
-    if (!w.human[team]) {
+    if (!w.bhuman[b]) {
       const k = Math.min(0.6, (zr * 0.5) / (Math.hypot(w.offx[b], w.offz[b]) + 1));
       w.goal[b] = 1; w.gx[b] = w.offx[b] * k; w.gz[b] = w.offz[b] * k;
     } else if (dist > zr - 4) {
@@ -198,13 +219,20 @@ function retarget(w) {
 }
 
 /**
- * Oyuncu emri. `list`: bölük numaraları (o takımın).
+ * Emir. `list`: bölük numaraları (o takımın).
  * move: {x, z} — bölükler hedefin çevresinde, yürüyüş yönüne dik saflar halinde dizilir.
  * attack: {target} — düşman bölüğü. stop: emirleri bırak, yakındaki düşmana kendiliğinden saldır.
+ * flag: {flag} — bayrak evresinde bölüğün sağ kalanları o bayrağa koşar.
  */
 export function command(w, team, list, cmd) {
   list = list.filter((b) => w.bteam[b] === team && w.balive[b]);
   if (!list.length) return;
+  if (cmd.type === 'flag') {
+    if (w.phase !== 'flag' || !w.flags[cmd.flag] || w.flags[cmd.flag].hp <= 0) return;
+    for (const b of list) w.bflag[b] = cmd.flag;
+    return;
+  }
+  if (w.phase !== 'battle') return;
   if (cmd.type === 'stop') {
     for (const b of list) { w.border[b] = ORDER.none; w.goal[b] = 0; w.btarget[b] = -1; w.bx[b] = w.cx[b]; w.bz[b] = w.cz[b]; }
     return;
@@ -222,13 +250,14 @@ export function command(w, team, list, cmd) {
   const f = Math.hypot(dx, dz) > 1 ? Math.atan2(dx, dz) : w.bface[list[0]];
   const sf = Math.sin(f), cf = Math.cos(f);
   const n = list.length, perRow = Math.max(1, Math.min(n, Math.ceil(Math.sqrt(n * 2.5))));
+  const colW = Math.max(...list.map((b) => bolukWidth(CLASSES[w.bcls[b]])));
   // Öndekiler öne, soldakiler sola: yollar kesişmesin.
   const fwd = (b) => w.cx[b] * sf + w.cz[b] * cf, lat = (b) => w.cx[b] * cf - w.cz[b] * sf;
   const sorted = [...list].sort((a, b) => fwd(b) - fwd(a));
   for (let r = 0; r * perRow < n; r++) {
     const row = sorted.slice(r * perRow, (r + 1) * perRow).sort((a, b) => lat(a) - lat(b));
     row.forEach((b, c) => {
-      const lx = (c - (row.length - 1) / 2) * BOLUK_W, lz = -r * BOLUK_D;
+      const lx = (c - (row.length - 1) / 2) * colW, lz = -r * colW * 0.85;
       w.gx[b] = cmd.x + cf * lx + sf * lz; w.gz[b] = cmd.z - sf * lx + cf * lz;
       w.goal[b] = 1; w.border[b] = ORDER.move; w.oface[b] = f; w.btarget[b] = -1; w.bengaged[b] = 0;
       w.bx[b] = w.cx[b]; w.bz[b] = w.cz[b]; // yürüyüş askerlerin şimdiki ortasından başlar
@@ -236,25 +265,34 @@ export function command(w, team, list, cmd) {
   }
 }
 
+/** Savaşı kazanan takımın sağ kalanları için bayrak evresini başlatır. flags: [{ player, x, z, hp }] */
+export function startFlagPhase(w, flags) {
+  w.phase = 'flag'; w.flagT = 0; w.flags = flags.map((f) => ({ ...f, hits: 0 }));
+  w.arrows.length = 0;
+  for (let b = 0; b < w.B; b++) { w.border[b] = ORDER.none; w.goal[b] = 0; w.btarget[b] = -1; w.bengaged[b] = 0; w.bflag[b] = -1; w.bx[b] = w.cx[b]; w.bz[b] = w.cz[b]; }
+}
+
 export function step(w) {
+  if (w.phase === 'flag') return flagStep(w);
+  if (w.phase !== 'battle') return w;
   const dt = TICK, rng = w.rng;
   w.px.set(w.x); w.pz.set(w.z);
   w.zone = w.t < ZONE.wait ? w.radius : Math.max(0, w.radius * (1 - (w.t - ZONE.wait) / ZONE.shrink));
   if (w.tick % Math.round(RETARGET / TICK) === 0) retarget(w);
   if (w.tick % 5 === 0) updateVision(w);
 
-  // Bölükler: hedef bölüğe yürür ve yaklaşınca çatışır; yoksa yürüyüş noktasına gider.
-  const walk = SOLDIER.walk * dt;
+  // Bölükler: hedef bölüğe yürür ve yaklaşınca çatışır (okçu menzilinde durur); yoksa yürüyüş noktasına gider.
   for (let b = 0; b < w.B; b++) {
     if (!w.balive[b]) { w.bengaged[b] = 0; continue; }
-    const o = w.btarget[b];
+    const cls = CLASSES[w.bcls[b]], walk = SOLDIER.walk * cls.speed * dt, o = w.btarget[b];
     if (o >= 0) {
       const dx = w.cx[o] - w.bx[b], dz = w.cz[o] - w.bz[b], d = Math.hypot(dx, dz);
-      if (d > ENGAGE) {
+      const stopAt = cls.ranged ? Math.max(ENGAGE, cls.reach * 0.85) : ENGAGE;
+      if (d > stopAt) {
         w.bengaged[b] = 0; w.bface[b] = Math.atan2(dx, dz);
-        const v = Math.min(walk, d - ENGAGE);
+        const v = Math.min(walk, d - stopAt);
         w.bx[b] += (dx / d) * v; w.bz[b] += (dz / d) * v;
-      } else w.bengaged[b] = 1;
+      } else { w.bengaged[b] = 1; if (cls.ranged) w.bface[b] = Math.atan2(dx, dz); }
     } else {
       w.bengaged[b] = 0;
       if (!w.goal[b]) continue;
@@ -273,24 +311,25 @@ export function step(w) {
 
   buildGrid(w);
   const { head, next, span, off } = w.grid;
-  const run = SOLDIER.run * dt, R2 = (SOLDIER.radius * 2) ** 2, zone2 = w.zone * w.zone;
+  const R2 = (SOLDIER.radius * 2) ** 2, zone2 = w.zone * w.zone;
   for (let i = 0; i < w.N; i++) {
     if (w.hp[i] <= 0) continue;
-    const b = w.boluk[i];
+    const b = w.boluk[i], ci = w.bcls[b], cls = CLASSES[ci], run = SOLDIER.run * cls.speed * dt;
     w.cd[i] -= dt; if (w.swing[i] > 0) w.swing[i] -= dt;
 
     // Daralan alanın dışında kalan asker aralıklarla can kaybeder.
     if (w.x[i] * w.x[i] + w.z[i] * w.z[i] > zone2) {
       w.zoneT[i] += dt;
-      if (w.zoneT[i] >= ZONE.damageEvery) { w.zoneT[i] = 0; if (--w.hp[i] === 0) { kill(w, i); continue; } }
+      if (w.zoneT[i] >= ZONE.damageEvery) { w.zoneT[i] = 0; if (--w.hp[i] <= 0) { kill(w, i); continue; } }
     } else w.zoneT[i] = 0;
 
+    // Yakın dövüş hedefi. Okçu yalnız dibine geleni kılıçlar gibi karşılar; yürüyüşteki bölük yalnız dibindekiyle dövüşür.
+    const melee = cls.ranged ? 0.9 : cls.reach;
     let t = w.target[i];
-    if (t >= 0 && (w.hp[t] <= 0 || (w.x[t] - w.x[i]) ** 2 + (w.z[t] - w.z[i]) ** 2 > (SOLDIER.melee * 1.3) ** 2)) t = -1;
-    // Hedef araması pahalı: her asker dört adımda bir arar. Yürüyüş emrindeki bölük yalnız dibindekiyle dövüşür.
+    if (t >= 0 && (w.hp[t] <= 0 || (w.x[t] - w.x[i]) ** 2 + (w.z[t] - w.z[i]) ** 2 > (cls.ranged ? 3 : SOLDIER.melee * 1.3) ** 2)) t = -1;
     if (t < 0 && (i + w.tick) % 4 === 0) {
-      const marching = w.border[b] === ORDER.move;
-      t = nearestEnemy(w, i, w.bengaged[b] ? SOLDIER.melee : marching ? SOLDIER.reach * 1.5 : SOLDIER.acquire);
+      const range = cls.ranged ? 2.2 : w.bengaged[b] ? SOLDIER.melee : w.border[b] === ORDER.move ? melee * 1.5 : SOLDIER.acquire;
+      t = nearestEnemy(w, i, Math.max(range, melee + 0.5));
     }
     w.target[i] = t;
 
@@ -298,11 +337,30 @@ export function step(w) {
     if (t >= 0) {
       const dx = w.x[t] - w.x[i], dz = w.z[t] - w.z[i], d = Math.hypot(dx, dz) || 1e-6;
       w.face[i] = Math.atan2(dx, dz);
-      if (d > SOLDIER.reach) { const v = Math.min(run, d - SOLDIER.reach); mx = (dx / d) * v; mz = (dz / d) * v; }
+      if (d > melee) { const v = Math.min(run, d - melee); mx = (dx / d) * v; mz = (dz / d) * v; }
       else if (w.cd[i] <= 0) {
-        w.cd[i] = SOLDIER.cooldown[0] + rng() * (SOLDIER.cooldown[1] - SOLDIER.cooldown[0]);
+        w.cd[i] = cls.cycle * (0.9 + rng() * 0.3);
         w.swing[i] = 0.35;
-        if (rng() < SOLDIER.hitChance && --w.hp[t] === 0) kill(w, t);
+        // Arkadan vuruş: saldıran, savunanın baktığı yönün arkasındaysa (throneofcurse +20).
+        const behind = Math.sin(w.face[t]) * -dx + Math.cos(w.face[t]) * -dz < -0.5 * d;
+        if (rng() < hitChance(ci, w.bcls[w.boluk[t]], behind) && --w.hp[t] <= 0) kill(w, t);
+      }
+    } else if (cls.ranged && w.btarget[b] >= 0 && w.bengaged[b]) {
+      // Okçu yuvasında durur, hedef bölükten bir askere ok atar.
+      const p = slotPos(w, b, w.slot[i]), dx = p.x - w.x[i], dz = p.z - w.z[i], d = Math.hypot(dx, dz);
+      if (d > 0.05) { const v = Math.min(run, d); mx = (dx / d) * v; mz = (dz / d) * v; }
+      const o = w.btarget[b];
+      w.face[i] = Math.atan2(w.cx[o] - w.x[i], w.cz[o] - w.z[i]);
+      if (w.cd[i] <= 0) {
+        w.cd[i] = cls.cycle * (0.9 + rng() * 0.3);
+        const tgt = pickMember(w, o, rng);
+        if (tgt >= 0) {
+          const ddx = w.x[tgt] - w.x[i], ddz = w.z[tgt] - w.z[i], dist = Math.hypot(ddx, ddz);
+          if (dist <= cls.reach * 1.1) {
+            w.swing[i] = 0.35;
+            w.arrows.push({ sx: w.x[i], sz: w.z[i], tx: w.x[tgt] + (rng() - 0.5), tz: w.z[tgt] + (rng() - 0.5), t0: w.t, t1: w.t + dist / ARROW.speed + 0.15, target: tgt, cls: ci });
+          }
+        }
       }
     } else if (w.bengaged[b] && w.btarget[b] >= 0) {
       // Çatışmadaki bölüğün boşta kalan askeri yuvasında beklemez, düşman bölüğün ortasına yürür.
@@ -315,25 +373,82 @@ export function step(w) {
       w.face[i] = d > 0.4 ? Math.atan2(dx, dz) : w.bface[b];
     }
     w.x[i] += mx; w.z[i] += mz;
+    separate(w, i, head, next, span, off, R2);
+  }
 
-    // İtme: üst üste binen askerler birbirinden ayrılır.
-    const gx = Math.floor((w.x[i] + off) / CELL), gz = Math.floor((w.z[i] + off) / CELL);
-    for (let cz = Math.max(0, gz - 1); cz <= Math.min(span - 1, gz + 1); cz++)
-      for (let cx = Math.max(0, gx - 1); cx <= Math.min(span - 1, gx + 1); cx++)
-        for (let j = head[cz * span + cx]; j !== -1; j = next[j]) {
-          if (j === i || w.hp[j] <= 0) continue;
-          const dx = w.x[i] - w.x[j], dz = w.z[i] - w.z[j], d2 = dx * dx + dz * dz;
-          if (d2 >= R2 || d2 < 1e-8) continue;
-          const d = Math.sqrt(d2), push = (SOLDIER.radius * 2 - d) * 0.5;
-          w.x[i] += (dx / d) * push; w.z[i] += (dz / d) * push;
-        }
+  // Oklar: düştüğü yerde hedef hâlâ oradaysa isabet zarı atılır.
+  if (w.arrows.length) {
+    let k = 0;
+    for (const a of w.arrows) {
+      if (w.t < a.t1) { w.arrows[k++] = a; continue; }
+      const t = a.target;
+      if (w.hp[t] > 0 && (w.x[t] - a.tx) ** 2 + (w.z[t] - a.tz) ** 2 < ARROW.hitRadius ** 2
+        && rng() < hitChance(a.cls, w.bcls[w.boluk[t]], false) && --w.hp[t] <= 0) kill(w, t);
+    }
+    w.arrows.length = k;
   }
 
   w.t += dt; w.tick++;
-  if (w.winner < 0 && (w.alive[0] === 0 || w.alive[1] === 0)) w.winner = w.alive[0] > 0 ? 0 : w.alive[1] > 0 ? 1 : 2;
+  if (w.winner < 0 && (w.alive[0] === 0 || w.alive[1] === 0)) {
+    w.winner = w.alive[0] > 0 ? 0 : w.alive[1] > 0 ? 1 : 2;
+    retarget(w);
+  }
   return w;
+}
+
+// Bayrak evresi: savaş yok; bayrağa gönderilen askerler koşar, değince bir can götürüp kaybolur.
+function flagStep(w) {
+  const dt = TICK;
+  w.px.set(w.x); w.pz.set(w.z);
+  buildGrid(w);
+  const { head, next, span, off } = w.grid, R2 = (SOLDIER.radius * 2) ** 2;
+  for (let i = 0; i < w.N; i++) {
+    if (w.hp[i] <= 0) continue;
+    const b = w.boluk[i], fi = w.bflag[b];
+    if (fi < 0) continue;
+    const f = w.flags[fi], dx = f.x - w.x[i], dz = f.z - w.z[i], d = Math.hypot(dx, dz);
+    if (d < 1.2) {
+      if (f.hp > 0) { f.hp--; f.hits++; }
+      w.hp[i] = 0; w.spent[i] = 1; w.alive[w.team[i]]--;
+      continue;
+    }
+    const v = Math.min(SOLDIER.run * 1.6 * CLASSES[w.bcls[b]].speed * dt, d);
+    w.x[i] += (dx / d) * v; w.z[i] += (dz / d) * v; w.face[i] = Math.atan2(dx, dz);
+    separate(w, i, head, next, span, off, R2 * 0.5);
+  }
+  w.t += dt; w.tick++; w.flagT += dt;
+  if (w.tick % 20 === 0) retarget(w);
+  const winners = w.winner === 0 || w.winner === 1 ? w.alive[w.winner] : 0;
+  if (w.flagT >= FLAG_TIME || winners === 0) {
+    // Gönderilmeyenler dağılır.
+    for (let i = 0; i < w.N; i++) if (w.hp[i] > 0) { w.hp[i] = 0; w.spent[i] = 1; w.alive[w.team[i]]--; }
+    w.phase = 'done';
+  }
+  return w;
+}
+
+function separate(w, i, head, next, span, off, R2) {
+  const gx = Math.floor((w.x[i] + off) / CELL), gz = Math.floor((w.z[i] + off) / CELL), r = Math.sqrt(R2);
+  for (let cz = Math.max(0, gz - 1); cz <= Math.min(span - 1, gz + 1); cz++)
+    for (let cx = Math.max(0, gx - 1); cx <= Math.min(span - 1, gx + 1); cx++)
+      for (let j = head[cz * span + cx]; j !== -1; j = next[j]) {
+        if (j === i || w.hp[j] <= 0) continue;
+        const dx = w.x[i] - w.x[j], dz = w.z[i] - w.z[j], d2 = dx * dx + dz * dz;
+        if (d2 >= R2 || d2 < 1e-8) continue;
+        const d = Math.sqrt(d2), push = (r - d) * 0.5;
+        w.x[i] += (dx / d) * push; w.z[i] += (dz / d) * push;
+      }
+}
+
+function pickMember(w, b, rng) {
+  const base = b * PER_BOLUK;
+  for (let k = 0; k < 6; k++) { const i = base + ((rng() * PER_BOLUK) | 0); if (w.hp[i] > 0) return i; }
+  for (let s = 0; s < PER_BOLUK; s++) if (w.hp[base + s] > 0) return base + s;
+  return -1;
 }
 
 function kill(w, i) {
   w.hp[i] = 0; w.diedAt[i] = w.t; w.alive[w.team[i]]--;
 }
+
+export { FAMILIES };

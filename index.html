@@ -11,11 +11,14 @@
 <div id="app">
   <div id="scene" aria-label="Savaş alanı"></div>
   <div id="selbox" hidden></div>
+  <div id="flag-labels" aria-live="polite"></div>
   <header id="header">
-    <div class="brand"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M11 36V5l19 6-15 6v19z"/></svg><span>AKIN VAR<small>SİSİ YAR. SAFI TUT. SAHAYI AL.</small></span></div>
+    <div class="brand"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M11 36V5l19 6-15 6v19z"/></svg><span>AKIN VAR<small>KUR. BUL. YÜKLEN.</small></span></div>
     <div id="hud" hidden>
-      <div class="score"><span class="blue">MAVİ</span><b id="blue">0</b><i>⚔</i><b id="red">0</b><span class="red">KIRMIZI</span></div>
-      <div class="sub"><span id="clock">0:00</span> · <span id="zone"></span></div>
+      <div class="hud-top"><span id="round" class="eyebrow">TUR 1</span>
+        <div id="score" class="score" hidden><span class="blue">MAVİ</span><b id="blue">0</b><i>⚔</i><b id="red">0</b><span class="red">KIRMIZI</span></div></div>
+      <div class="sub" id="zone"></div>
+      <div id="flags"></div>
     </div>
     <!-- STANDART üst araç çubuğu: ← josephuz.com · Kontroller F1. Ses ve müzik henüz yok, düğmeleri de yok. ☰ oyuna özgü menü. -->
     <div class="top-actions" id="toptools"><a class="subtle" href="https://www.josephuz.com/">← <span class="site-name">josephuz.com</span></a><button id="help" class="subtle" title="Kontroller (F1)">Kontroller <kbd>F1</kbd></button><button id="menu-btn" class="subtle" title="Menü (Esc)" aria-label="Menü">☰</button></div>
@@ -23,20 +26,37 @@
 
   <section id="home">
     <div class="home-copy">
-      <p class="eyebrow"><span class="dash"></span> İKİ ORDU. BİR ÇAYIR. KALIN BİR SİS.</p>
+      <p class="eyebrow"><span class="dash"></span> İKİ TAKIM. BİR ÇAYIR. KALIN BİR SİS.</p>
       <h1>Akın var.<br><em>Safını tut.</em></h1>
-      <p class="intro">Düşmanı sisin içinde ara, bölüklerini diz, çarpış.<br>Alan daraldıkça kaçacak yer kalmaz.</p>
-      <p class="eyebrow small">SAVAŞIN BÜYÜKLÜĞÜ</p>
-      <div id="sizes"></div>
+      <p class="intro">Her tur parayı böl: ekonomi, talim ya da asker.<br>Sisin içinde düşmanı bul, sağ kalanlarınla bayraklarına yüklen.</p>
+      <p class="eyebrow small">TAKIM</p>
+      <div id="sizes" class="opts five"></div>
+      <p class="eyebrow small">BAYRAK CANI</p>
+      <div id="hps" class="opts"></div>
       <div class="home-buttons"><button id="play" class="primary">SAVAŞA BAŞLA <span>↗</span></button></div>
       <div class="home-facts">
-        <div><b>01 / BUL</b><p>Sis her şeyi saklar.<br>Bölüklerin ancak yakını görür.</p></div>
-        <div><b>02 / YÖNET</b><p>Seç, sürükle, sağ tıkla.<br>Yürü ya da saldır.</p></div>
-        <div><b>03 / DAYAN</b><p>Alan daralır.<br>Dışarıda kalan erir.</p></div>
+        <div><b>01 / KUR</b><p>39 asker sınıfı, ekonomi ve talim.<br>Her tıklama bir bölük.</p></div>
+        <div><b>02 / BUL</b><p>Sis her şeyi saklar,<br>alan daralır.</p></div>
+        <div><b>03 / YÜKLEN</b><p>Sağ kalan her asker<br>bir bayraktan bir can götürür.</p></div>
       </div>
     </div>
-    <footer>JOSEPHUZ OYUNLARI <span>FAZ 1 · TEK SAVAŞ · BOTA KARŞI</span></footer>
+    <footer>JOSEPHUZ OYUNLARI <span>BOTLARA KARŞI · 5v5'E KADAR</span></footer>
   </section>
+
+  <section id="prep" hidden>
+    <div class="prep-head">
+      <div><span class="eyebrow" id="prep-round">TUR 1 · HAZIRLIK</span><h2>Ordunu kur.</h2></div>
+      <div class="gold"><span class="coin">◉</span><b id="prep-gold">0</b><small id="prep-income"></small></div>
+      <div class="timer"><small>KALAN</small><b id="prep-time">0:45</b></div>
+      <div id="prep-team"></div>
+    </div>
+    <div id="perma"></div>
+    <div id="cards"></div>
+    <p class="prep-hint">Sol tık: al · sağ tık: geri ver (tam iade) · Enter: hazır. Askerler tura geçmez; ekonomi, talim ve artan para kalır.</p>
+  </section>
+  <div id="floats" aria-hidden="true"></div>
+
+  <div id="flag-banner" class="panel" hidden><span class="eyebrow">BAYRAK EVRESİ</span><h3 id="flag-title"></h3><p id="flag-hint"></p></div>
 
   <div id="orders" class="panel" hidden>
     <span id="sel-info">Seçili bölük yok</span>
@@ -46,8 +66,10 @@
       <button id="pause" title="Duraklat (P)">Ⅱ</button>
       <button id="speed" title="Hız">1×</button>
     </div>
-    <small class="hint">Sol tık seç · sürükle kutu · çift tık aynı tür · <b>sağ tık</b> yürü / saldır · 1 mızraklı · 2 kılıçlı</small>
+    <small class="hint">Sol tık seç · sürükle kutu · çift tık aynı sınıf · <b>sağ tık</b> yürü / saldır · 1 kılıç · 2 mızrak · 3 okçu · 4 atlı</small>
   </div>
+
+  <div id="toast" role="status" hidden></div>
 
   <aside id="perf" class="panel" hidden>
     <span class="eyebrow">BAŞARIM · F3</span>
@@ -55,30 +77,34 @@
     <div class="row"><button id="fog">Sis: açık</button><button id="shadows">Gölge: açık</button></div>
   </aside>
 
-  <dialog id="menu-dialog" aria-labelledby="pause-title"><div class="dialog-inner"><span class="eyebrow">SAVAŞ DURDU</span><h2 id="pause-title">Bir nefes arası.</h2>
+  <dialog id="menu-dialog" aria-labelledby="pause-title"><div class="dialog-inner"><span class="eyebrow">OYUN DURDU</span><h2 id="pause-title">Bir nefes arası.</h2>
     <div class="menu-stack"><button id="resume" class="primary">DEVAM ET →</button><button id="menu-help">Kontroller <kbd>F1</kbd></button><button id="menu-home">Ana menü</button><a href="https://www.josephuz.com/">josephuz.com'a dön</a></div></div></dialog>
 
   <dialog id="end-dialog"><div class="dialog-inner"><span class="eyebrow" id="end-eyebrow"></span><h2 id="end-title"></h2><p id="end-copy"></p>
-    <div class="menu-stack"><button id="again" class="primary">YENİ SAVAŞ →</button><button id="end-watch">Sahaya bak</button><button id="end-home">Ana menü</button></div></div></dialog>
+    <div class="menu-stack"><button id="again" class="primary">YENİ MAÇ →</button><button id="end-watch">İzlemeye devam</button><button id="end-home">Ana menü</button></div></div></dialog>
 
   <dialog id="help-dialog"><div class="dialog-inner"><button class="close" data-close aria-label="Kapat">×</button><span class="eyebrow">KÜÇÜK BİR KOMUTAN REHBERİ</span><h2>Ordun, senin kararın.</h2>
+    <p class="controls-title">HAZIRLIK</p>
+    <div class="controls">
+      <div><kbd>SOL TIK</kbd> Kartı al: bölük, ekonomi, talim</div>
+      <div><kbd>SAĞ TIK</kbd> Geri ver, para tam döner</div>
+      <div><kbd>ENTER</kbd> Hazır</div>
+    </div>
+    <p class="controls-title">SAVAŞ</p>
     <div class="controls">
       <div><kbd>SOL TIK</kbd> Bölük seç (Shift ile ekle)</div>
       <div><kbd>SÜRÜKLE</kbd> Kutu içindekileri seç</div>
-      <div><kbd>ÇİFT TIK</kbd> Ekrandaki aynı türü seç</div>
-      <div><kbd>SAĞ TIK</kbd> Yere: yürü · düşmana: saldır</div>
-      <div><kbd>1 / 2</kbd> Mızraklıları / kılıçlıları seç</div>
+      <div><kbd>ÇİFT TIK</kbd> Ekrandaki aynı sınıfı seç</div>
+      <div><kbd>SAĞ TIK</kbd> Yere: yürü · düşmana: saldır · bayrağa: yüklen</div>
+      <div><kbd>1 2 3 4</kbd> Kılıçlı · mızraklı · okçu · atlı seç</div>
       <div><kbd>` · CTRL A</kbd> Hepsini seç</div>
       <div><kbd>BOŞLUK</kbd> Dur, yakındakiyle çatış</div>
-      <div><kbd>W A S D</kbd> Kamerayı kaydır</div>
-      <div><kbd>ORTA TUŞ</kbd> Sürükle: kaydır</div>
+      <div><kbd>W A S D</kbd> Kamerayı kaydır · orta tuşla sürükle</div>
       <div><kbd>TEKERLEK</kbd> Yaklaştır / uzaklaştır</div>
-      <div><kbd>Q / E</kbd> Kamerayı çevir</div>
-      <div><kbd>F</kbd> Ordunun ortasına dön</div>
-      <div><kbd>P</kbd> Duraklat</div>
-      <div><kbd>ESC</kbd> Seçimi bırak · menü</div>
+      <div><kbd>Q / E</kbd> Kamerayı çevir · <kbd>F</kbd> ordunun ortası</div>
+      <div><kbd>P</kbd> Duraklat · <kbd>ESC</kbd> seçimi bırak, menü</div>
     </div>
-    <p>Bölüklerin yalnız çevresini görür; sisin içindeki düşman görünmez. Emirsiz bölük yerinde bekler, yakınına gelen düşmana kendiliğinden saldırır. 30 saniye sonra alan daralmaya başlar: kızıl bölgede kalan asker can kaybeder.</p>
+    <p>Her tur gelir gelir: ◉ 1.000 ve ekonomi seviyesi başına ◉ 150. Talim, o ailedeki her askere +1 can verir; ekonomi ve talim kalıcıdır, askerler değil. Savaşta sis vardır, 30 saniye sonra alan daralır. Turu kazanan takımın sağ kalanları 10 saniye içinde rakip bayraklara gönderilir; her asker bir can götürür. Bayrağı düşen elenir.</p>
     <button class="primary" data-close>ANLADIM →</button></div></dialog>
 </div>
 <script type="module" src="./src/main.js"></script>

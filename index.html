@@ -10,30 +10,75 @@
 <body>
 <div id="app">
   <div id="scene" aria-label="Savaş alanı"></div>
+  <div id="selbox" hidden></div>
   <header id="header">
-    <div class="brand"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M11 36V5l19 6-15 6v19z"/></svg><span>AKIN VAR<small>FAZ 0 · BAŞARIM DENEMESİ</small></span></div>
-    <!-- STANDART üst araç çubuğu: ← josephuz.com · Kontroller F1. Faz 0'da ses ve müzik yok, düğmeleri de yok. -->
-    <div class="top-actions" id="toptools"><a class="subtle" href="https://www.josephuz.com/">← josephuz.com</a><button id="help" class="subtle" title="Kontroller (F1)">Kontroller <kbd>F1</kbd></button></div>
+    <div class="brand"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M11 36V5l19 6-15 6v19z"/></svg><span>AKIN VAR<small>SİSİ YAR. SAFI TUT. SAHAYI AL.</small></span></div>
+    <div id="hud" hidden>
+      <div class="score"><span class="blue">MAVİ</span><b id="blue">0</b><i>⚔</i><b id="red">0</b><span class="red">KIRMIZI</span></div>
+      <div class="sub"><span id="clock">0:00</span> · <span id="zone"></span></div>
+    </div>
+    <!-- STANDART üst araç çubuğu: ← josephuz.com · Kontroller F1. Ses ve müzik henüz yok, düğmeleri de yok. ☰ oyuna özgü menü. -->
+    <div class="top-actions" id="toptools"><a class="subtle" href="https://www.josephuz.com/">← <span class="site-name">josephuz.com</span></a><button id="help" class="subtle" title="Kontroller (F1)">Kontroller <kbd>F1</kbd></button><button id="menu-btn" class="subtle" title="Menü (Esc)" aria-label="Menü">☰</button></div>
   </header>
-  <aside id="panel" class="panel">
-    <span class="eyebrow">ASKER SAYISI</span>
-    <div class="row sizes"><button data-asker="2000">2.000</button><button data-asker="5000">5.000</button><button data-asker="10000">10.000</button><button data-asker="20000">20.000</button></div>
-    <dl class="stats">
-      <dt>Kare / sn</dt><dd id="fps">–</dd>
-      <dt>Simülasyon</dt><dd><span id="sim-ms">–</span> ms</dd>
-      <dt>Çizim</dt><dd><span id="draw-ms">–</span> ms</dd>
-      <dt>Asker</dt><dd id="count">–</dd>
-      <dt class="blue">Mavi</dt><dd id="blue">–</dd>
-      <dt class="red">Kırmızı</dt><dd id="red">–</dd>
-      <dt>Süre</dt><dd id="clock">0:00</dd>
-    </dl>
-    <p id="result"></p>
-    <div class="row"><button id="pause">Ⅱ Duraklat</button><button id="speed">1×</button></div>
-    <div class="row"><button id="shadows">Gölge: açık</button><button id="restart">↻ Yeniden</button></div>
+
+  <section id="home">
+    <div class="home-copy">
+      <p class="eyebrow"><span class="dash"></span> İKİ ORDU. BİR ÇAYIR. KALIN BİR SİS.</p>
+      <h1>Akın var.<br><em>Safını tut.</em></h1>
+      <p class="intro">Düşmanı sisin içinde ara, bölüklerini diz, çarpış.<br>Alan daraldıkça kaçacak yer kalmaz.</p>
+      <p class="eyebrow small">SAVAŞIN BÜYÜKLÜĞÜ</p>
+      <div id="sizes"></div>
+      <div class="home-buttons"><button id="play" class="primary">SAVAŞA BAŞLA <span>↗</span></button></div>
+      <div class="home-facts">
+        <div><b>01 / BUL</b><p>Sis her şeyi saklar.<br>Bölüklerin ancak yakını görür.</p></div>
+        <div><b>02 / YÖNET</b><p>Seç, sürükle, sağ tıkla.<br>Yürü ya da saldır.</p></div>
+        <div><b>03 / DAYAN</b><p>Alan daralır.<br>Dışarıda kalan erir.</p></div>
+      </div>
+    </div>
+    <footer>JOSEPHUZ OYUNLARI <span>FAZ 1 · TEK SAVAŞ · BOTA KARŞI</span></footer>
+  </section>
+
+  <div id="orders" class="panel" hidden>
+    <span id="sel-info">Seçili bölük yok</span>
+    <div class="order-buttons">
+      <button id="select-all" title="Hepsini seç (` ya da Ctrl A)">Hepsini seç</button>
+      <button id="stop" title="Dur, yakındakiyle çatış (Boşluk)">Dur</button>
+      <button id="pause" title="Duraklat (P)">Ⅱ</button>
+      <button id="speed" title="Hız">1×</button>
+    </div>
+    <small class="hint">Sol tık seç · sürükle kutu · çift tık aynı tür · <b>sağ tık</b> yürü / saldır · 1 mızraklı · 2 kılıçlı</small>
+  </div>
+
+  <aside id="perf" class="panel" hidden>
+    <span class="eyebrow">BAŞARIM · F3</span>
+    <dl class="stats"><dt>Kare / sn</dt><dd id="fps">–</dd><dt>Simülasyon</dt><dd><span id="sim-ms">–</span> ms</dd><dt>Çizim</dt><dd><span id="draw-ms">–</span> ms</dd></dl>
+    <div class="row"><button id="fog">Sis: açık</button><button id="shadows">Gölge: açık</button></div>
   </aside>
-  <dialog id="help-dialog"><div class="dialog-inner"><span class="eyebrow">KONTROLLER</span><h2>Savaşı izle.</h2>
-    <div class="controls"><div><kbd>W A S D</kbd> Kamerayı kaydır</div><div><kbd>SÜRÜKLE</kbd> Haritayı kaydır</div><div><kbd>TEKERLEK</kbd> Yaklaştır / uzaklaştır</div><div><kbd>Q / E</kbd> Kamerayı çevir</div><div><kbd>F</kbd> Ortaya dön</div><div><kbd>BOŞLUK</kbd> Duraklat</div><div><kbd>F1</kbd> Kontroller</div></div>
-    <p>Faz 0 yalnızca başarım denemesi: ordular kendi kendine savaşır. Seçim ve emirler sonraki fazda gelir.</p>
+
+  <dialog id="menu-dialog" aria-labelledby="pause-title"><div class="dialog-inner"><span class="eyebrow">SAVAŞ DURDU</span><h2 id="pause-title">Bir nefes arası.</h2>
+    <div class="menu-stack"><button id="resume" class="primary">DEVAM ET →</button><button id="menu-help">Kontroller <kbd>F1</kbd></button><button id="menu-home">Ana menü</button><a href="https://www.josephuz.com/">josephuz.com'a dön</a></div></div></dialog>
+
+  <dialog id="end-dialog"><div class="dialog-inner"><span class="eyebrow" id="end-eyebrow"></span><h2 id="end-title"></h2><p id="end-copy"></p>
+    <div class="menu-stack"><button id="again" class="primary">YENİ SAVAŞ →</button><button id="end-watch">Sahaya bak</button><button id="end-home">Ana menü</button></div></div></dialog>
+
+  <dialog id="help-dialog"><div class="dialog-inner"><button class="close" data-close aria-label="Kapat">×</button><span class="eyebrow">KÜÇÜK BİR KOMUTAN REHBERİ</span><h2>Ordun, senin kararın.</h2>
+    <div class="controls">
+      <div><kbd>SOL TIK</kbd> Bölük seç (Shift ile ekle)</div>
+      <div><kbd>SÜRÜKLE</kbd> Kutu içindekileri seç</div>
+      <div><kbd>ÇİFT TIK</kbd> Ekrandaki aynı türü seç</div>
+      <div><kbd>SAĞ TIK</kbd> Yere: yürü · düşmana: saldır</div>
+      <div><kbd>1 / 2</kbd> Mızraklıları / kılıçlıları seç</div>
+      <div><kbd>` · CTRL A</kbd> Hepsini seç</div>
+      <div><kbd>BOŞLUK</kbd> Dur, yakındakiyle çatış</div>
+      <div><kbd>W A S D</kbd> Kamerayı kaydır</div>
+      <div><kbd>ORTA TUŞ</kbd> Sürükle: kaydır</div>
+      <div><kbd>TEKERLEK</kbd> Yaklaştır / uzaklaştır</div>
+      <div><kbd>Q / E</kbd> Kamerayı çevir</div>
+      <div><kbd>F</kbd> Ordunun ortasına dön</div>
+      <div><kbd>P</kbd> Duraklat</div>
+      <div><kbd>ESC</kbd> Seçimi bırak · menü</div>
+    </div>
+    <p>Bölüklerin yalnız çevresini görür; sisin içindeki düşman görünmez. Emirsiz bölük yerinde bekler, yakınına gelen düşmana kendiliğinden saldırır. 30 saniye sonra alan daralmaya başlar: kızıl bölgede kalan asker can kaybeder.</p>
     <button class="primary" data-close>ANLADIM →</button></div></dialog>
 </div>
 <script type="module" src="./src/main.js"></script>

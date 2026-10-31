@@ -17,10 +17,15 @@ Tarayıcıda Three.js ile çalışan, Total War esintili, tur tabanlı takım or
 
 ## Durum
 
-**Faz 0 (başarım denemesi):** iki ordu karşı karşıya kendi kendine savaşır.
-- Simülasyon bölük düzeyinde, belirlenimci.
-- Çizim InstancedMesh ile.
-- RTX 5080'de 20.000 askerle 60 kare/sn.
+- **Faz 0 (başarım):** bölük düzeyi belirlenimci simülasyon, InstancedMesh çizim. RTX 5080'de 20.000 askerle 60 kare/sn.
+- **Faz 1 (tek savaş, bota karşı):**
+  - Çember arena, sis (bölükler yalnız çevresini görür), 30 sn sonra daralan alan (dışarıda kalan can kaybeder).
+  - Seçim: tek tık, kutu, çift tık aynı tür, 1 / 2 türe göre, Ctrl A hepsi.
+  - Emir: sağ tık yürü / saldır, Boşluk dur. Bot sisin içinde arar.
+  - Ana ekran, Esc menüsü, maç sonu. F3 başarım paneli.
+
+Sıradaki: hazırlık evresi (kart ızgarası, ekonomi, talim), throneofcurse sınıfları ve üstünlük tablosu, tur döngüsü ve bayrak evresi, 5v5 botlar, çevrim içi.
+
 
 ## Lisans / License
 

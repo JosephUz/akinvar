@@ -17,13 +17,25 @@ export const SOLDIER = {
   melee: 5.5,            // bölük çatışmadayken hedef arama
 };
 
-export const ENGAGE = 7;     // iki bölük bu kadar yaklaşınca çatışmaya girer
-export const RETARGET = 1;   // bölük hedefini saniyede bir yeniler
+export const ENGAGE = 7;      // iki bölük bu kadar yaklaşınca çatışmaya girer
+export const RETARGET = 1;    // bölük hedefini saniyede bir yeniler
+export const VISION = 22;     // bölüğün görüş yarıçapı (sis)
+export const AUTO_RANGE = 24; // emirsiz oyuncu bölüğü bu yakındaki görünen düşmana kendiliğinden saldırır
+
+// Daralan alan: bekleme, sonra sıfıra kadar düzgün daralma. Dışarıdaki asker belli aralıkla can kaybeder.
+export const ZONE = { wait: 30, shrink: 150, damageEvery: 1.5 };
 
 export const TEAMS = [
-  { name: 'Mavi', color: '#4f7fc4' },
+  { name: 'Mavi', color: '#4f7fc4', selected: '#a9cdfb' },
   { name: 'Kırmızı', color: '#c4523f' },
 ];
+export const KINDS = ['Mızraklı', 'Kılıçlı'];
 
 export const DEFAULT_SOLDIERS = 2000;
 export const MAX_SOLDIERS = 20000;
+export const SIZES = [
+  { soldiers: 2000, name: 'Küçük' },
+  { soldiers: 5000, name: 'Orta' },
+  { soldiers: 10000, name: 'Büyük' },
+  { soldiers: 20000, name: 'Dev' },
+];

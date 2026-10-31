@@ -30,6 +30,25 @@ Paket: `npm run itch` → `artifacts/akinvar-itch.zip` (index.html kökte). Gör
 | Screenshots | `ekran-1-savas.jpg`, `ekran-2-hazirlik.png`, `ekran-3-bayrak.png`, `ekran-4-ana.png` |
 | Visibility | Önce **Draft**, deneyip **Public** |
 
+## Tema (Edit theme)
+
+Renkler oyunun kendi paletinden (style.css :root).
+
+| Alan | Değer |
+|---|---|
+| BG | `#14211a` |
+| BG 2 | `#1d2a1f` |
+| Text | `#f1ead4` |
+| Link | `#e0bf6c` |
+| More options → Button color / Button text | `#e0bf6c` / `#1d2a1f` |
+| More options → Border color | `#3a4a3c` |
+| Font | Lato, Size Large (değişmez) |
+| More options → Header font | Lora (yoksa Lato) |
+| Screenshots | Sidebar |
+| Banner | `banner-960x240.png` |
+| Background | `arka-plan-1920x1080.jpg` (Repeat: No repeat, Position: Center, Fixed) |
+| Embed BG | `embed-bg-1280x720.jpg` |
+
 Oyunun dili tarayıcı diline göre açılır (Türkçe tarayıcıda Türkçe), sağ üstteki **EN / TR** düğmesiyle değişir.
 
 ## Description

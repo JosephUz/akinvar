@@ -6,3 +6,4 @@ sunucu*.log
 .env.*
 !.env.example
 .wrangler/
+artifacts/

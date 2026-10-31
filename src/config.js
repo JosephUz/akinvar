@@ -30,24 +30,25 @@ export const FLAG_TIME = 10;
 export const FLAG_HP = [100, 1000, 10000, 100000];
 export const TEAM_SIZES = [1, 2, 3, 4, 5];
 
-// Bot zorluğu: hazırlıkta paranın ne kadarını harcar, rakibin ordusunun karşısını kurar mı.
+// Bot zorluğu: hazırlıkta paranın ne kadarını harcar, rakibin ordusunun karşısını kurar mı. Ad: zorluk.<anahtar>.
 export const DIFFICULTY = {
-  kolay: { name: 'Kolay', spend: 0.7, counter: false },
-  orta: { name: 'Orta', spend: 0.85, counter: true },
-  zor: { name: 'Zor', spend: 1, counter: true },
+  kolay: { spend: 0.7, counter: false },
+  orta: { spend: 0.85, counter: true },
+  zor: { spend: 1, counter: true },
 };
 
+// Takım adı: takim.0 (Mavi), takim.1 (Kırmızı)
 export const TEAMS = [
-  { name: 'Mavi', color: '#4f7fc4', shades: ['#4f7fc4', '#3f9fb8', '#6a6fd0', '#3d8a9a', '#7f95d8'], selected: '#b9d8ff' },
-  { name: 'Kırmızı', color: '#c4523f', shades: ['#c4523f', '#c9783a', '#b23f63', '#a8553a', '#d06a5a'], selected: '#ffd0c4' },
+  { color: '#4f7fc4', shades: ['#4f7fc4', '#3f9fb8', '#6a6fd0', '#3d8a9a', '#7f95d8'], selected: '#b9d8ff' },
+  { color: '#c4523f', shades: ['#c4523f', '#c9783a', '#b23f63', '#a8553a', '#d06a5a'], selected: '#ffd0c4' },
 ];
 
-// Bot kişilikleri (hazırlıkta harcama, bayrak evresinde hedef seçimi)
+// Bot kişilikleri (hazırlıkta harcama, bayrak evresinde hedef seçimi). Botun görünen adı kisilik.<key>.
 export const PERSONALITIES = [
-  { key: 'acgozlu', name: 'Açgözlü' },
-  { key: 'akinci', name: 'Akıncı' },
-  { key: 'dengeli', name: 'Dengeli' },
-  { key: 'karsi', name: 'Karşı kurucu' },
+  { key: 'acgozlu' },
+  { key: 'akinci' },
+  { key: 'dengeli' },
+  { key: 'karsi' },
 ];
 
 // Çevrim içi sunucu: evdeki PC'de Docker + Cloudflare Tunnel (akinvar-sunucu.josephuz.com). Yerelde sayfa sunucudan açılınca aynı adres kullanılır.

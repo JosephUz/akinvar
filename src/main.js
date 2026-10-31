@@ -11,14 +11,21 @@ import {
 import { View } from './view.js';
 import { sunucuBaglanti } from './ag.js';
 import { kodDuzelt, kodYeterli } from './kod.js';
+import { t, DIL, sayi, dilUygula, dilDugmesi } from './dil.js';
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const fmt = (t) => `${Math.floor(Math.max(0, t) / 60)}:${String(Math.floor(Math.max(0, t) % 60)).padStart(2, '0')}`;
-const num = (n) => Math.round(n).toLocaleString('tr-TR');
-const dec = (n) => n.toFixed(1).replace('.', ',');
+const num = (n) => sayi(Math.round(n));
+const dec = (n) => sayi(n, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const IMG = (c) => `img/asker/${c.img}.png`, ICON = (k) => `img/ikon/${k}.png`;
+// Görünen adlar dile göre: sınıf (silah, kalkan, zırh), aile, takım, bot kişiliği. Ortak dosyalarda (sunucu da kullanır) yalnız anahtar durur.
+const sinifAdi = (c) => (c.mounted ? t('sinif.atli') + ' · ' : '') + t('silah.' + c.wkey);
+const sinifDetay = (c) => [c.skey && t('kalkan.' + c.skey), c.akey && t('zirh.' + c.akey)].filter(Boolean).join(' · ') || t('sinif.zirhsiz');
+const aileAdi = (f) => t('aile.' + FAMILIES[f].key);
+const takimAdi = (k) => t('takim.' + k);
+const oyuncuAdi = (p) => (p.human ? p.name || t('oyuncu.sen') : t('kisilik.' + p.personality));
 
 // throneofcurse asker görsellerinin çevresi saydam boşluk: her görselin dolu alanı bir kez ölçülür, kart yalnız o kutuyu
 // gösterir (object-view-box). Sabit büyütme bazılarını (uzun mızrak, baş) kesiyordu. Desteklemeyen tarayıcı tüm görseli gösterir.
@@ -57,7 +64,7 @@ window.__akin = stats;
 function load(k, d) { try { return Number(localStorage.getItem(k)) || d; } catch { return d; } }
 function loadS(k, d) { try { return localStorage.getItem(k) ?? d; } catch { return d; } }
 function save(k, v) { try { localStorage.setItem(k, v); } catch { /* gizli pencere */ } }
-const adim = () => secim.ad.trim() || `Komutan-${String(1000 + ((Math.random() * 9000) | 0))}`;
+const adim = () => secim.ad.trim() || `${t('ana.varsayilanAd')}-${String(1000 + ((Math.random() * 9000) | 0))}`;
 
 // ---------- akış ----------
 
@@ -79,7 +86,7 @@ function enterGame() {
 function startSolo() {
   online = false;
   m = createMatch({ teamSize: secim.takim, flagHp: secim.can, difficulty: secim.zorluk });
-  me = m.players[0]; me.name = secim.ad.trim() || 'Sen';
+  me = m.players[0]; me.name = secim.ad.trim();
   enterGame(); enterPrep(PREP_TIME);
 }
 
@@ -126,11 +133,11 @@ function toFlags() {
   const span = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...zs) - Math.min(...zs));
   view.target.set((Math.min(...xs) + Math.max(...xs)) / 2, 0, (Math.min(...zs) + Math.max(...zs)) / 2);
   view.zoom = Math.max(18, Math.min(60, span * 0.6 + 8)); view.resize();
-  $('flag-labels').innerHTML = w.flags.map((f, k) => `<div class="flag-label" data-flag="${k}"><b>${esc(m.players[f.player].name)}</b><span></span></div>`).join('');
+  $('flag-labels').innerHTML = w.flags.map((f, k) => `<div class="flag-label" data-flag="${k}"><b>${esc(oyuncuAdi(m.players[f.player]))}</b><span></span></div>`).join('');
   const winnerMe = w.winner === me.team && !me.out;
   $('flag-banner').hidden = false;
-  $('flag-title').textContent = w.winner === me.team ? 'Saha senin. Bayraklara yüklen.' : 'Saha düştü. Bayraklarına koşuyorlar.';
-  $('flag-hint').textContent = winnerMe ? 'Askerlerini seç, rakip bayrağa sağ tıkla (seçim yoksa hepsi gider). 10 saniyede gönderilmeyen dağılır.' : 'Her asker bayraktan bir can götürür.';
+  $('flag-title').textContent = t(w.winner === me.team ? 'bayrak.kazandin' : 'bayrak.kaybettin');
+  $('flag-hint').textContent = t(winnerMe ? 'bayrak.ipucu' : 'bayrak.izle');
   $('orders').hidden = !winnerMe;
 }
 
@@ -138,9 +145,9 @@ function toFlags() {
 function roundOver(before = new Map(m.players.map((p) => [p.id, m.hpBefore?.[p.id] ?? p.hp])), result = null) {
   state = 'roundEnd'; $('flag-banner').hidden = true; $('orders').hidden = true;
   if (!online) endRound(m);
-  const lost = m.players.filter((p) => before.get(p.id) !== p.hp).map((p) => `${p.name} −${num(before.get(p.id) - p.hp)}${p.out ? ' (elendi)' : ''}`);
+  const lost = m.players.filter((p) => before.get(p.id) !== p.hp).map((p) => `${oyuncuAdi(p)} −${num(before.get(p.id) - p.hp)}${p.out ? ' ' + t('tur.elendi') : ''}`);
   const wn = (result ?? m.log.at(-1))?.winner;
-  toast(wn === 2 || wn === undefined ? 'Berabere: iki ordu da yok oldu.' : `${TEAMS[wn].name} turu kazandı.${lost.length ? ' ' + lost.join(' · ') : ''}`, 3200);
+  toast(wn === 2 || wn === undefined ? t('tur.berabere') : t('tur.kazandi', { takim: takimAdi(wn) }) + (lost.length ? ' ' + lost.join(' · ') : ''), 3200);
   if (m.phase === 'over') { setTimeout(finish, 1600); return; }
   if (me.out && !me.toldOut) { me.toldOut = true; setTimeout(showOut, 1600); return; }
   if (!online) setTimeout(() => { if (state === 'roundEnd') enterPrep(PREP_TIME); }, 2600);
@@ -149,22 +156,22 @@ function roundOver(before = new Map(m.players.map((p) => [p.id, m.hpBefore?.[p.i
 function finish() {
   state = 'over';
   const won = m.winner === me.team;
-  $('end-eyebrow').textContent = won ? `${m.round} TURDA ZAFER` : `${m.round}. TURDA SANCAK DÜŞTÜ`;
-  $('end-title').textContent = won ? 'Zafer.' : 'Yenilgi.';
-  $('end-copy').textContent = m.players.map((p) => `${p.name} (${TEAMS[p.team].name}): ${num(p.hp)} can, ekonomi ${p.eco}`).join(' · ');
+  $('end-eyebrow').textContent = t(won ? 'son.zaferGoz' : 'son.yenilgiGoz', { n: m.round });
+  $('end-title').textContent = t(won ? 'son.zafer' : 'son.yenilgi');
+  $('end-copy').textContent = m.players.map((p) => `${oyuncuAdi(p)} (${takimAdi(p.team)}): ${t('son.ozet', { can: num(p.hp), eko: p.eco })}`).join(' · ');
   $('end-watch').hidden = true;
-  $('again').innerHTML = online ? 'LOBİYE DÖN →' : 'YENİ MAÇ →';
-  $('end-home').textContent = online ? 'Odadan çık' : 'Ana menü';
+  $('again').textContent = t(online ? 'son.lobiyeDon' : 'son.yeniMac') + ' →';
+  $('end-home').textContent = t(online ? 'menu.odadanCik' : 'menu.anaMenu');
   $('end-dialog').showModal();
 }
 
 function showOut() {
-  $('end-eyebrow').textContent = 'BAYRAĞIN DÜŞTÜ';
-  $('end-title').textContent = 'Elendin.';
-  $('end-copy').textContent = 'Takımın savaşmayı sürdürüyor. İstersen izle.';
+  $('end-eyebrow').textContent = t('son.elendiGoz');
+  $('end-title').textContent = t('son.elendin');
+  $('end-copy').textContent = t('son.elendiMetin');
   $('end-watch').hidden = false;
-  $('again').innerHTML = online ? 'LOBİYE DÖN →' : 'YENİ MAÇ →';
-  $('end-home').textContent = online ? 'Odadan çık' : 'Ana menü';
+  $('again').textContent = t(online ? 'son.lobiyeDon' : 'son.yeniMac') + ' →';
+  $('end-home').textContent = t(online ? 'menu.odadanCik' : 'menu.anaMenu');
   $('end-dialog').showModal();
 }
 
@@ -179,46 +186,46 @@ function focusArmy() {
 
 // Kartta her sınıfın kime üstün, kime zayıf olduğu (isabet farkı)
 const EDGE = CLASSES.map((a) => CLASSES.map((d) => ({ d, s: HIT[a.index * CLASS_COUNT + d.index] - HIT[d.index * CLASS_COUNT + a.index] })).sort((x, y) => y.s - x.s));
-const MAT = [['wood', 'WOOD', 'odun'], ['iron', 'IRON', 'demir'], ['steel', 'STEEL', 'çelik'], ['leather', 'LEATHER', 'deri'], ['wheat', 'WHEAT', 'yem']];
+const MAT = [['wood', 'WOOD'], ['iron', 'IRON'], ['steel', 'STEEL'], ['leather', 'LEATHER'], ['wheat', 'WHEAT']]; // ad: mal.<anahtar>
 
 function renderPrep() {
-  $('prep-round').textContent = `TUR ${m.round} · HAZIRLIK`;
+  $('prep-round').textContent = t('hazirlik.tur', { n: m.round });
   $('prep-gold').textContent = num(me.gold);
-  $('prep-income').textContent = `her tur +◉ ${num(income(me))}`;
+  $('prep-income').textContent = t('hazirlik.gelir', { n: num(income(me)) });
   const eco = ecoCost(me.eco);
-  $('eco').innerHTML = `<img src="${ICON('GOLD')}" alt=""><div><span class="fam">EKONOMİ · SEVİYE ${me.eco}</span><b>Her tur ◉ ${num(income(me))} → ◉ ${num(income(me) + ECONOMY.levelIncome)}</b></div><span class="price">◉ ${num(eco)}</span>${me.bought.eco ? `<span class="badge">+${me.bought.eco}</span>` : ''}`;
+  $('eco').innerHTML = `<img src="${ICON('GOLD')}" alt=""><div><span class="fam">${t('eko.seviye', { n: me.eco })}</span><b>${t('eko.gelir', { a: num(income(me)), b: num(income(me) + ECONOMY.levelIncome) })}</b></div><span class="price">◉ ${num(eco)}</span>${me.bought.eco ? `<span class="badge">+${me.bought.eco}</span>` : ''}`;
   $('eco').classList.toggle('poor', me.gold < eco);
   const counts = new Map();
   for (const u of me.units) counts.set(u, (counts.get(u) ?? 0) + 1);
   $('cards').innerHTML = CLASSES.map((c) => {
     const n = counts.get(c.index) ?? 0, fam = FAMILIES[c.family], lv = me.talim[c.index], up = talimCost(c.index, lv), max = lv >= TALIM.max;
-    return `<div class="card unit ${me.gold < c.cost ? 'poor' : ''} ${n ? 'has' : ''}" data-cls="${c.index}" style="--fam:${fam.color}" role="button" tabindex="0" title="${c.title} · ${c.detail}">
+    return `<div class="card unit ${me.gold < c.cost ? 'poor' : ''} ${n ? 'has' : ''}" data-cls="${c.index}" style="--fam:${fam.color}" role="button" tabindex="0" title="${sinifAdi(c)} · ${sinifDetay(c)}">
       <div class="main">
         <div class="pic"><img class="soldier" src="${IMG(c)}" alt="" draggable="false" style="object-view-box:${viewBox.get(IMG(c)) ?? 'none'}">
-          <span class="fam">${fam.name}</span>${n ? `<span class="badge">×${n}</span>` : ''}</div>
+          <span class="fam">${aileAdi(c.family)}</span>${n ? `<span class="badge">×${n}</span>` : ''}</div>
         <div class="side">
-          <button class="up ${max || me.gold < up ? 'off' : ''} ${lv ? 'on' : ''}" data-up="${c.index}" title="Geliştir: bu sınıfın her askerine +1 can (seviye ${lv}/${TALIM.max})">⬆ ${max ? 'EN ÜST' : num(up)}</button>
+          <button class="up ${max || me.gold < up ? 'off' : ''} ${lv ? 'on' : ''}" data-up="${c.index}" title="${t('kart.gelistir', { lv, max: TALIM.max })}">⬆ ${max ? t('kart.enUst') : num(up)}</button>
           <div class="items">${c.items.map((k) => `<img src="${ICON(k)}" alt="">`).join('')}</div>
-          <div class="stats"><span class="hp" title="Can">♥ ${3 + lv}${lv ? `<sup>+${lv}</sup>` : ''}</span><span title="Menzil">⇢ ${dec(c.reach)}</span><span title="Hız">» ${dec(c.speed)}</span></div>
+          <div class="stats"><span class="hp" title="${t('kart.can')}">♥ ${3 + lv}${lv ? `<sup>+${lv}</sup>` : ''}</span><span title="${t('kart.menzil')}">⇢ ${dec(c.reach)}</span><span title="${t('kart.hiz')}">» ${dec(c.speed)}</span></div>
         </div>
       </div>
-      <div class="row-name"><b class="name">${c.title}</b><span class="price">◉ ${num(c.cost)}</span></div>
+      <div class="row-name"><b class="name">${t('silah.' + c.wkey)}</b><span class="price">◉ ${num(c.cost)}</span></div>
     </div>`;
-  }).join('') + `<button class="card ready" id="ready" ${me.ready ? 'disabled' : ''}>${me.ready ? 'BEKLENİYOR…' : 'HAZIR <span>→</span>'}<small>${me.units.length} bölük · ${num(me.units.length * 20)} asker</small></button>`;
+  }).join('') + `<button class="card ready" id="ready" ${me.ready ? 'disabled' : ''}>${me.ready ? t('hazir.bekleniyor') : t('hazir.hazir') + ' <span>→</span>'}<small>${t('sayi.boluk', { n: me.units.length })} · ${t('sayi.asker', { n: me.units.length * PER_BOLUK })}</small></button>`;
   $('prep').classList.toggle('waiting', !!me.ready);
   $('prep-team').innerHTML = m.players.map((p) => {
-    const info = p.out ? 'elendi' : p === me ? `${me.units.length} bölük` : p.team === me.team ? `${p.units.length} bölük · eko ${p.eco}` : p.ready ? 'hazır' : 'kuruyor…';
-    return `<div class="pl ${p.team ? 'red' : 'blue'} ${p === me ? 'me' : ''} ${p.out ? 'out' : ''}"><i style="background:${p.color}"></i><b>${esc(p.name)}</b><span>${info}</span><em>⚑ ${num(p.hp)}</em></div>`;
+    const info = p.out ? t('takim.elendi') : p === me ? t('sayi.boluk', { n: me.units.length }) : p.team === me.team ? `${t('sayi.boluk', { n: p.units.length })} · ${t('takim.eko', { n: p.eco })}` : t(p.ready ? 'takim.hazir' : 'takim.kuruyor');
+    return `<div class="pl ${p.team ? 'red' : 'blue'} ${p === me ? 'me' : ''} ${p.out ? 'out' : ''}"><i style="background:${p.color}"></i><b>${esc(oyuncuAdi(p))}</b><span>${info}</span><em>⚑ ${num(p.hp)}</em></div>`;
   }).join('');
 }
 
 function showInfo(c) {
-  if (!c) { $('info').innerHTML = '<span class="muted">Bir kartın üstüne gel: malzemesi ve kime üstün olduğu burada görünür.</span>'; return; }
+  if (!c) { $('info').innerHTML = `<span class="muted">${t('bilgi.bos')}</span>`; return; }
   const strong = EDGE[c.index].filter((x) => x.s > 0).slice(0, 3), weak = EDGE[c.index].filter((x) => x.s < 0).slice(-3).reverse();
-  const chip = (x) => `<span class="mini"><img src="${IMG(x.d)}" alt="">${x.d.title}${x.d.detail !== 'Zırhsız' ? ' · ' + x.d.detail : ''}</span>`;
-  const mats = MAT.filter(([k]) => c.materials[k]).map(([k, icon, ad]) => `<span class="mat"><img src="${ICON(icon)}" alt="">${c.materials[k]} ${ad}</span>`).join('') || '<span class="muted">eşyasız</span>';
-  $('info').innerHTML = `<b>${c.title}</b><span class="muted">${c.detail}</span><span class="sep"></span><span class="lbl">ASKER BAŞI</span>${mats}
-    <span class="sep"></span><span class="lbl good">ÜSTÜN</span>${strong.map(chip).join('') || '—'}<span class="sep"></span><span class="lbl bad">ZAYIF</span>${weak.map(chip).join('') || '—'}`;
+  const chip = (x) => `<span class="mini"><img src="${IMG(x.d)}" alt="">${sinifAdi(x.d)}${x.d.skey || x.d.akey ? ' · ' + sinifDetay(x.d) : ''}</span>`;
+  const mats = MAT.filter(([k]) => c.materials[k]).map(([k, icon]) => `<span class="mat"><img src="${ICON(icon)}" alt="">${c.materials[k]} ${t('mal.' + k)}</span>`).join('') || `<span class="muted">${t('bilgi.esyasiz')}</span>`;
+  $('info').innerHTML = `<b>${sinifAdi(c)}</b><span class="muted">${sinifDetay(c)}</span><span class="sep"></span><span class="lbl">${t('bilgi.askerBasi')}</span>${mats}
+    <span class="sep"></span><span class="lbl good">${t('bilgi.ustun')}</span>${strong.map(chip).join('') || '—'}<span class="sep"></span><span class="lbl bad">${t('bilgi.zayif')}</span>${weak.map(chip).join('') || '—'}`;
 }
 
 function floatAt(el, text, good) {
@@ -272,18 +279,19 @@ function syncSelection() {
   for (let b = 0; b < tagEls.length; b++) tagEls[b].classList.toggle('sel', selected.has(b));
   renderDeck();
   $('sel-info').textContent = selected.size
-    ? `${selected.size} bölük · ${num(n)} asker` + (fams.size === 1 ? ` · ${FAMILIES[[...fams][0]].name}` : '')
-    : 'Seçili bölük yok · emirsiz bölükler kendi savaşır';
+    ? `${t('sayi.boluk', { n: selected.size })} · ${t('sayi.asker', { n })}` + (fams.size === 1 ? ` · ${aileAdi([...fams][0])}` : '')
+    : t('secim.yok');
 }
 
 // ---------- bölük sancakları ve seçim destesi ----------
 
 // Her bölüğün üstünde siyah zeminde throneofcurse asker görseli: sınıfı (silah, kalkan, zırh, at) bir bakışta.
+// Gizli başlar (tagShown false ile aynı); yoksa ilk karede görünmeyen sancak sol üst köşede kalıyordu.
 let tagEls = [], tagShown = [], deckSig = '', drawAlpha = 1, tagX = new Float32Array(0), tagZ = new Float32Array(0), tagN = new Int32Array(0);
 function buildTags() {
   $('unit-tags').innerHTML = [...Array(w.B).keys()].map((b) => {
     const c = CLASSES[w.bcls[b]], color = m.players[m.order[w.bowner[b]]].color;
-    return `<div class="tag ${w.bteam[b] === me.team ? 'own' : 'foe'} ${mine(b) ? 'mine' : ''}" style="--team:${color};--fam:${FAMILIES[c.family].color}"><img src="${IMG(c)}" alt="" style="object-view-box:${viewBox.get(IMG(c)) ?? 'none'}"></div>`;
+    return `<div class="tag ${w.bteam[b] === me.team ? 'own' : 'foe'} ${mine(b) ? 'mine' : ''}" style="display:none;--team:${color};--fam:${FAMILIES[c.family].color}"><img src="${IMG(c)}" alt="" style="object-view-box:${viewBox.get(IMG(c)) ?? 'none'}"></div>`;
   }).join('');
   tagEls = [...$('unit-tags').children]; tagShown = tagEls.map(() => false); deckSig = '';
   tagX = new Float32Array(w.B); tagZ = new Float32Array(w.B); tagN = new Int32Array(w.B);
@@ -319,11 +327,11 @@ function renderDeck() {
   if (sig === deckSig) return; deckSig = sig;
   $('deck').innerHTML = list.map(([ci, g]) => {
     const c = CLASSES[ci];
-    return `<button class="dk" data-cls="${ci}" data-stack="${Math.min(g.n, 4) - 1}" style="--fam:${FAMILIES[c.family].color}" title="${c.title} · ${c.detail}
-Tıkla: yalnız bunlar · Shift: seçimden çıkar">
-      <span class="fam">${FAMILIES[c.family].name}</span>${g.n > 1 ? `<span class="badge">×${g.n}</span>` : ''}
+    return `<button class="dk" data-cls="${ci}" data-stack="${Math.min(g.n, 4) - 1}" style="--fam:${FAMILIES[c.family].color}" title="${sinifAdi(c)} · ${sinifDetay(c)}
+${t('deste.ipucu')}">
+      <span class="fam">${aileAdi(c.family)}</span>${g.n > 1 ? `<span class="badge">×${g.n}</span>` : ''}
       <img class="soldier" src="${IMG(c)}" alt="" draggable="false" style="object-view-box:${viewBox.get(IMG(c)) ?? 'none'}">
-      <b>${c.title}</b><span class="bar"><i style="width:${(100 * g.alive / (g.n * PER_BOLUK)).toFixed(0)}%"></i></span><small>${num(g.alive)} asker</small></button>`;
+      <b>${sinifAdi(c)}</b><span class="bar"><i style="width:${(100 * g.alive / (g.n * PER_BOLUK)).toFixed(0)}%"></i></span><small>${t('sayi.asker', { n: g.alive })}</small></button>`;
   }).join('');
 }
 $('deck').addEventListener('click', (e) => {
@@ -495,7 +503,7 @@ const adresKodu = () => params.get('oda') ?? new URLSearchParams(location.search
 const adresTemizle = () => { if (new URLSearchParams(location.search).get('oda') != null) history.replaceState(null, '', location.pathname); };
 const davetLinki = (kod) => location.origin + location.pathname + '?oda=' + kod;
 const net = (msg) => lobiBag?.gonder(msg);
-const ozetYazi = (o) => `${o.takim}v${o.takim} · ⚑ ${num(o.can)} · ${DIFFICULTY[o.zorluk]?.name ?? 'Orta'}`;
+const ozetYazi = (o) => `${o.takim}v${o.takim} · ⚑ ${num(o.can)} · ${t('zorluk.' + (o.zorluk in DIFFICULTY ? o.zorluk : 'orta'))}`;
 
 function lobiBaglan() {
   if (lobiBag || params.has('cevrimdisi')) return;
@@ -503,13 +511,13 @@ function lobiBaglan() {
     if (d === 'acik') {
       lobiAcik = true; lobiDeneme = 0; b.gonder({ t: 'lobi' }); lobiYaz();
       const kayit = oturum.al(), kod = adresKodu() ? kodDuzelt(adresKodu()) : null;
-      if (kayit?.kod && (!kod || kod === kayit.kod)) { durumYaz('Odaya geri bağlanıyor…'); istek({ t: 'don', kod: kayit.kod, jeton: kayit.jeton }); }
-      else if (kod) { durumYaz('Odaya bağlanıyor…'); istek({ t: 'kod', kod }); }
+      if (kayit?.kod && (!kod || kod === kayit.kod)) { durumYaz(t('ag.geriBaglaniyor')); istek({ t: 'don', kod: kayit.kod, jeton: kayit.jeton }); }
+      else if (kod) { durumYaz(t('ag.baglaniyor')); istek({ t: 'kod', kod }); }
       return;
     }
     const oyunda = online && state !== 'menu', odada = oyunda || !!odaDurum;
     lobiAcik = false; lobiBag = null;
-    if (odada) { odaDurum = null; toHome(); toast('Sunucuyla bağlantı koptu.'); }
+    if (odada) { odaDurum = null; toHome(); toast(t('ag.koptu')); }
     lobiYaz();
     setTimeout(lobiBaglan, Math.min(30000, 5000 * ++lobiDeneme));
   });
@@ -524,7 +532,7 @@ function agMesaj(msg) {
     case 'katildi': oturum.yaz({ kod: msg.kod, jeton: msg.jeton }); durumYaz(''); history.replaceState(null, '', '?oda=' + msg.kod); return;
     case 'oda': odaDurum = msg; if (!online || state === 'menu') bekleGoster(); return; // maç bitince sonuç ekranı kalır, LOBİYE DÖN açar
     case 'hata':
-      durumYaz({ 'oda.yok': 'Böyle bir oda yok', 'oda.dolu': 'Oda dolu' }[msg.kod] ?? msg.m);
+      durumYaz(msg.kod === 'oda.yok' || msg.kod === 'oda.dolu' ? t('sunucu.' + msg.kod) : msg.m);
       if (!odaDurum) { oturum.yaz(null); adresTemizle(); }
       return;
     default: netQueue.push(msg);
@@ -581,28 +589,28 @@ function lobiYaz() {
   $('cevrim').classList.toggle('kapali', !lobiAcik);
   for (const id of ['hizli', 'oda-kur', 'odaya-katil']) { $(id).disabled = !lobiAcik; }
   if (!lobiAcik) $('kod-satir').hidden = true;
-  $('cevrimici-sayi').textContent = lobiAcik ? `● ${lobiListe.cevrimici ?? 0} çevrim içi` : 'YAKINDA';
+  $('cevrimici-sayi').textContent = lobiAcik ? '● ' + t('lobi.cevrimici', { n: num(lobiListe.cevrimici ?? 0) }) : t('lobi.yakinda');
   $('acik-odalar').hidden = !lobiAcik;
   const l = lobiListe.odalar ?? [], k = $('odalar');
   $('oda-sayi').textContent = l.length ? String(l.length) : '';
   k.innerHTML = '';
-  if (!l.length) { k.innerHTML = '<div class="bos">Şu an açık oda yok. Hızlı katıl yeni bir oda kurar.</div>'; return; }
+  if (!l.length) { k.innerHTML = `<div class="bos">${t('lobi.bos')}</div>`; return; }
   for (const o of l) {
     const dolu = o.n >= o.max, e = document.createElement('button');
     e.className = 'oda'; e.disabled = dolu;
-    e.innerHTML = `<span class="oda-ad"><b></b><small>${ozetYazi(o)} · ${o.n}/${o.max} oyuncu</small></span><em class="oda-durum${o.durum === 'mac' ? ' macta' : ''}">${o.durum === 'mac' ? 'MAÇTA' : 'LOBİDE'}</em><em class="oda-katil">${dolu ? 'DOLU' : 'KATIL →'}</em>`;
+    e.innerHTML = `<span class="oda-ad"><b></b><small>${ozetYazi(o)} · ${t('lobi.oyuncu', { n: o.n, max: o.max })}</small></span><em class="oda-durum${o.durum === 'mac' ? ' macta' : ''}">${t(o.durum === 'mac' ? 'lobi.macta' : 'lobi.lobide')}</em><em class="oda-katil">${dolu ? t('lobi.dolu') : t('lobi.katil') + ' →'}</em>`;
     e.querySelector('b').textContent = o.kuran;
-    e.onclick = () => { durumYaz('Odaya bağlanıyor…'); istek({ t: 'kod', kod: o.kod }); };
+    e.onclick = () => { durumYaz(t('ag.baglaniyor')); istek({ t: 'kod', kod: o.kod }); };
     k.append(e);
   }
 }
-$('hizli').onclick = () => { if (!lobiAcik) return; durumYaz('Oda aranıyor…'); istek({ t: 'hizli' }); };
-$('oda-kur').onclick = () => { if (!lobiAcik) return; durumYaz('Oda kuruluyor…'); istek({ t: 'kur' }); };
+$('hizli').onclick = () => { if (!lobiAcik) return; durumYaz(t('ag.araniyor')); istek({ t: 'hizli' }); };
+$('oda-kur').onclick = () => { if (!lobiAcik) return; durumYaz(t('ag.kuruluyor')); istek({ t: 'kur' }); };
 $('odaya-katil').onclick = () => { const s = $('kod-satir'); s.hidden = !s.hidden; if (!s.hidden) $('kod').focus(); };
 function kodlaKatil() {
   const kod = kodDuzelt($('kod').value);
-  if (!kodYeterli(kod)) { durumYaz('Oda kodunu yaz'); $('kod').focus(); return; }
-  $('kod').value = kod; durumYaz('Odaya bağlanıyor…'); istek({ t: 'kod', kod });
+  if (!kodYeterli(kod)) { durumYaz(t('ag.kodYaz')); $('kod').focus(); return; }
+  $('kod').value = kod; durumYaz(t('ag.baglaniyor')); istek({ t: 'kod', kod });
 }
 $('kod-katil').onclick = kodlaKatil;
 $('kod').onkeydown = (e) => { if (e.key === 'Enter') kodlaKatil(); };
@@ -616,18 +624,18 @@ function bekleGoster() {
   document.body.classList.remove('playing');
   $('home').hidden = true; $('bekleme').hidden = false; $('hud').hidden = true; $('prep').hidden = true; $('orders').hidden = true; $('flag-banner').hidden = true; $('flag-labels').innerHTML = '';
   const kuran = d.kuran === d.ben;
-  $('b-goz').textContent = `ODA · ${ozetYazi(d)}`;
+  $('b-goz').textContent = t('bekleme.goz', { ozet: ozetYazi(d) });
   $('b-kod').textContent = d.kod;
-  $('b-gorunur').textContent = d.ozel ? 'ÖZEL ODA · yalnız kodla' : 'AÇIK ODA · listede görünür';
+  $('b-gorunur').textContent = t(d.ozel ? 'bekleme.ozel' : 'bekleme.acik');
   if (!kuran || !d.koltuk.some((k) => k && k.u === tasiSecili)) tasiSecili = null;
   const n = d.koltuk.length / 2;
-  $('koltuklar').innerHTML = [0, 1].map((t) => `<div class="takim ${t ? 'red' : 'blue'}"><span class="eyebrow">${TEAMS[t].name.toUpperCase()}</span><div class="sutun" data-t="${t}"></div></div>`).join('');
+  $('koltuklar').innerHTML = [0, 1].map((k) => `<div class="takim ${k ? 'red' : 'blue'}"><span class="eyebrow">${takimAdi(k).toLocaleUpperCase(DIL)}</span><div class="sutun" data-t="${k}"></div></div>`).join('');
   d.koltuk.forEach((k, i) => {
     const e = document.createElement('button'); e.type = 'button';
     e.className = 'koltuk ' + (k ? 'dolu' : 'bos') + (k?.u === d.ben ? ' sen' : '') + (k?.koptu ? ' koptu' : '') + (k && k.u === tasiSecili ? ' secili' : '');
     e.innerHTML = k
-      ? `<b></b>${k.u === d.kuran ? '<small>kuran</small>' : ''}${k.u === d.ben ? '<small class="sen">sen</small>' : ''}${k.koptu ? '<small class="kop">koptu</small>' : ''}`
-      : '<span class="bot-yazi">Bot · boş koltuk</span><span class="otur-yazi">Buraya otur</span>';
+      ? `<b></b>${k.u === d.kuran ? `<small>${t('bekleme.kuran')}</small>` : ''}${k.u === d.ben ? `<small class="sen">${t('bekleme.sen')}</small>` : ''}${k.koptu ? `<small class="kop">${t('bekleme.koptu')}</small>` : ''}`
+      : `<span class="bot-yazi">${t('bekleme.botKoltuk')}</span><span class="otur-yazi">${t('bekleme.otur')}</span>`;
     if (k) e.querySelector('b').textContent = k.ad;
     e.onclick = () => koltukTik(i);
     if (kuran) {
@@ -644,11 +652,11 @@ function bekleGoster() {
   });
   $('b-takim').innerHTML = TEAM_SIZES.map((s) => `<button data-v="${s}" class="${s === d.takim ? 'secili' : ''}" ${kuran ? '' : 'disabled'}>${s}v${s}</button>`).join('');
   $('b-can').innerHTML = FLAG_HP.map((s) => `<button data-v="${s}" class="${s === d.can ? 'secili' : ''}" ${kuran ? '' : 'disabled'}>${num(s)}</button>`).join('');
-  $('b-zorluk').innerHTML = Object.entries(DIFFICULTY).map(([key, v]) => `<button data-v="${key}" class="${key === d.zorluk ? 'secili' : ''}" ${kuran ? '' : 'disabled'}>${v.name}</button>`).join('');
+  $('b-zorluk').innerHTML = Object.entries(DIFFICULTY).map(([key, v]) => `<button data-v="${key}" class="${key === d.zorluk ? 'secili' : ''}" ${kuran ? '' : 'disabled'}>${t('zorluk.' + key)}</button>`).join('');
   for (const b of $('b-ozel').children) { b.classList.toggle('secili', (b.dataset.v === '1') === d.ozel); b.disabled = !kuran; }
   const insan = d.koltuk.filter(Boolean).length;
-  $('b-bilgi').textContent = `${insan} insan · ${d.koltuk.length - insan} bot`;
-  $('b-ipucu').textContent = tasiSecili != null ? 'Taşınacak koltuğa tıkla' : kuran ? 'Boş koltuğa tıklayıp geçebilir, oyuncuları sürükleyip taşıyabilirsin.' : 'Boş koltuğa tıklayıp geçebilirsin.';
+  $('b-bilgi').textContent = t('bekleme.sayim', { i: insan, b: d.koltuk.length - insan });
+  $('b-ipucu').textContent = t(tasiSecili != null ? 'bekleme.tasi' : kuran ? 'bekleme.ipucuKuran' : 'bekleme.ipucu');
   $('b-basla').hidden = !kuran; $('b-bekle').hidden = kuran;
 }
 function koltukTik(i) {
@@ -666,7 +674,7 @@ $('b-basla').onclick = () => net({ t: 'basla' });
 $('b-cik').onclick = () => odadanCik();
 $('b-link').onclick = () => {
   const b = $('b-link'), u = davetLinki(odaDurum?.kod ?? ''), yaz = () => { $('b-ipucu').textContent = u; };
-  try { navigator.clipboard.writeText(u).then(() => { b.textContent = 'Link kopyalandı'; setTimeout(() => { b.textContent = 'Linki kopyala'; }, 1600); }, yaz); } catch { yaz(); }
+  try { navigator.clipboard.writeText(u).then(() => { b.textContent = t('bekleme.kopyalandi'); setTimeout(() => { b.textContent = t('bekleme.linkKopyala'); }, 1600); }, yaz); } catch { yaz(); }
 };
 /** Odadan çık: koltuk boşalır, ?oda ve jeton silinir, ana ekrana dönülür. */
 function odadanCik() {
@@ -738,21 +746,21 @@ function hud(now = performance.now()) {
   stats.state = state; stats.round = m?.round; stats.t = w?.t; stats.alive = w && [...w.alive];
   if (!m || state === 'menu') return;
   if (state === 'prep') { $('prep-time').textContent = fmt(prepLeft); $('prep-time').classList.toggle('warn', prepLeft < 10); }
-  $('round').textContent = `TUR ${m.round}`;
+  $('round').textContent = t('hud.tur', { n: m.round });
   // Savaş sürerken ölen her asker sahibinin bayrağından düşer (tek başına: savaş sonunda işlenir; çevrim içi: tur sonu mesajıyla).
   const live = w && m.order && (state === 'battle' || (state === 'flag' && online)) ? battleLosses(m, w) : null;
   $('flags').innerHTML = [0, 1].map((t) => `<div class="side ${t ? 'red' : 'blue'}">${m.players.filter((p) => p.team === t).map((p) => {
     const hp = Math.max(0, p.hp - (live?.get(p.id) ?? 0));
-    return `<span class="chip ${p === me ? 'me' : ''} ${p.out || !hp ? 'out' : ''}"><i style="background:${p.color}"></i>${esc(p.name)} <b>⚑ ${num(hp)}</b></span>`;
+    return `<span class="chip ${p === me ? 'me' : ''} ${p.out || !hp ? 'out' : ''}"><i style="background:${p.color}"></i>${esc(oyuncuAdi(p))} <b>⚑ ${num(hp)}</b></span>`;
   }).join('')}</div>`).join('');
   if (!w || state === 'prep') { $('score').hidden = true; $('zone').textContent = ''; return; }
   $('score').hidden = false;
   $('blue').textContent = num(w.alive[0]); $('red').textContent = num(w.alive[1]);
   const z = $('zone');
-  if (state === 'flag') { z.textContent = `Bayrak evresi · ${dec(Math.max(0, FLAG_TIME - w.flagT))} sn`; z.className = 'warn'; }
-  else if (w.t < ZONE.wait) { z.textContent = `${fmt(w.t)} · Alan ${fmt(ZONE.wait - w.t)} sonra daralıyor`; z.className = ''; }
-  else if (w.zone > 0) { z.textContent = `${fmt(w.t)} · Alan daralıyor · ${Math.round((w.zone / w.radius) * 100)}%`; z.className = 'warn'; }
-  else { z.textContent = `${fmt(w.t)} · Alan kapandı`; z.className = 'warn'; }
+  if (state === 'flag') { z.textContent = t('hud.bayrak', { s: dec(Math.max(0, FLAG_TIME - w.flagT)) }); z.className = 'warn'; }
+  else if (w.t < ZONE.wait) { z.textContent = `${fmt(w.t)} · ${t('hud.alanBekle', { k: fmt(ZONE.wait - w.t) })}`; z.className = ''; }
+  else if (w.zone > 0) { z.textContent = `${fmt(w.t)} · ${t('hud.alanDaraliyor', { p: Math.round((w.zone / w.radius) * 100) })}`; z.className = 'warn'; }
+  else { z.textContent = `${fmt(w.t)} · ${t('hud.alanKapandi')}`; z.className = 'warn'; }
 }
 
 function toast(text, ms = 2500) {
@@ -765,20 +773,20 @@ function toast(text, ms = 2500) {
 function syncButtons() {
   $('pause').hidden = online; $('speed').hidden = online;
   $('pause').textContent = paused ? '▶' : 'Ⅱ';
-  $('pause').title = paused ? 'Devam (P)' : 'Duraklat (P)';
+  $('pause').title = t(paused ? 'dugme.devam' : 'dugme.duraklat') + ' (P)';
   $('speed').textContent = `${speed}×`;
   for (const b of document.querySelectorAll('[data-size]')) b.classList.toggle('active', Number(b.dataset.size) === secim.takim);
   for (const b of document.querySelectorAll('[data-hp]')) b.classList.toggle('active', Number(b.dataset.hp) === secim.can);
   for (const b of document.querySelectorAll('[data-zor]')) b.classList.toggle('active', b.dataset.zor === secim.zorluk);
-  $('menu-home').textContent = online ? 'Odadan çık' : 'Ana menü';
-  $('menu-eyebrow').textContent = online ? 'ÇEVRİM İÇİ · MAÇ SÜRÜYOR' : 'OYUN DURDU';
+  $('menu-home').textContent = t(online ? 'menu.odadanCik' : 'menu.anaMenu');
+  $('menu-eyebrow').textContent = t(online ? 'menu.gozCevrim' : 'menu.gozDurdu');
 }
 function toggleDialog(d) { if (d.open) d.close(); else d.showModal(); }
 function openMenu() { if (!online) paused = true; syncButtons(); $('menu-dialog').showModal(); }
 
-$('sizes').innerHTML = TEAM_SIZES.map((n) => `<button data-size="${n}"><b>${n}v${n}</b><small>${n === 1 ? 'teke tek' : `${n - 1} bot yanında`}</small></button>`).join('');
-$('hps').innerHTML = FLAG_HP.map((n) => `<button data-hp="${n}"><b>${num(n)}</b><small>${{ 100: 'kısa oyun', 1000: 'orta', 10000: 'uzun', 100000: 'çok uzun' }[n]}</small></button>`).join('');
-$('zors').innerHTML = Object.entries(DIFFICULTY).map(([k, v]) => `<button data-zor="${k}"><b>${v.name}</b><small>${{ kolay: 'paranın %70’i', orta: 'paranın %85’i', zor: 'hepsini harcar' }[k]}</small></button>`).join('');
+$('sizes').innerHTML = TEAM_SIZES.map((n) => `<button data-size="${n}"><b>${n}v${n}</b><small>${n === 1 ? t('ana.tekeTek') : t('ana.botYaninda', { n: n - 1 })}</small></button>`).join('');
+$('hps').innerHTML = FLAG_HP.map((n) => `<button data-hp="${n}"><b>${num(n)}</b><small>${t('ana.can.' + n)}</small></button>`).join('');
+$('zors').innerHTML = Object.entries(DIFFICULTY).map(([k, v]) => `<button data-zor="${k}"><b>${t('zorluk.' + k)}</b><small>${t('ana.zor.' + k)}</small></button>`).join('');
 for (const b of document.querySelectorAll('[data-size]')) b.onclick = () => { secim.takim = +b.dataset.size; save('akinvar.takim', secim.takim); syncButtons(); };
 for (const b of document.querySelectorAll('[data-hp]')) b.onclick = () => { secim.can = +b.dataset.hp; save('akinvar.bayrak', secim.can); syncButtons(); };
 for (const b of document.querySelectorAll('[data-zor]')) b.onclick = () => { secim.zorluk = b.dataset.zor; save('akinvar.zorluk', secim.zorluk); syncButtons(); };
@@ -798,14 +806,15 @@ $('menu-home').onclick = () => (online ? odadanCik() : toHome());
 $('again').onclick = () => { if (!online) { startSolo(); return; } $('end-dialog').close(); online = false; state = 'over'; if (odaDurum) bekleGoster(); else toHome(); };
 $('end-home').onclick = () => (online ? odadanCik() : toHome());
 $('end-watch').onclick = () => { $('end-dialog').close(); if (!online) enterPrep(PREP_TIME); };
-$('fog').onclick = () => { view.fogOn = !view.fogOn; view.fogFirst = true; $('fog').textContent = `Sis: ${view.fogOn ? 'açık' : 'kapalı'}`; };
-$('shadows').onclick = () => { view.setShadows(!view.shadows); $('shadows').textContent = `Gölge: ${view.shadows ? 'açık' : 'kapalı'}`; };
+$('fog').onclick = () => { view.fogOn = !view.fogOn; view.fogFirst = true; $('fog').textContent = t('perf.sis', { d: t(view.fogOn ? 'perf.acik' : 'perf.kapali') }); };
+$('shadows').onclick = () => { view.setShadows(!view.shadows); $('shadows').textContent = t('perf.golge', { d: t(view.shadows ? 'perf.acik' : 'perf.kapali') }); };
 for (const b of document.querySelectorAll('[data-close]')) b.onclick = () => b.closest('dialog').close();
 window.__akinCmd = {
   startSolo, beginBattle, selectAll: () => selectWhere(() => true), order, flagOrder, view, net,
   get m() { return m; }, get w() { return w; }, get state() { return state; }, get me() { return me; }, get online() { return online; }, get oda() { return odaDurum; },
 };
 
+dilUygula(); dilDugmesi($('dil'));
 showInfo(null); menuBattle(); syncButtons(); hud(); lobiYaz(); lobiBaglan();
 if (params.has('oyna')) startSolo();
 requestAnimationFrame(frame);

@@ -127,7 +127,7 @@ footer{position:fixed;bottom:16px;left:30px;right:30px;font-size:.6em;letter-spa
 .card .stats span{white-space:nowrap}.card .stats .hp{color:#ff9f8a}.card .stats sup{color:#9fe0a0;font-weight:800;margin-left:1px}
 .card .row-name{display:flex;align-items:baseline;gap:6px;margin:2px 0 0 3px}
 .card .price{margin-left:auto;font-size:1.05em;color:#ffd77e;font-weight:800;line-height:1;white-space:nowrap}
-.card .name{min-width:0;font:600 .84em/1.2 Georgia,serif;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .name{min-width:0;font:600 .78em/1.2 Georgia,serif;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card .badge,.eco-card .badge{background:var(--gold);color:#1f2a1d;font-weight:900;font-size:1em;padding:2px 9px;border-radius:12px;box-shadow:0 2px 8px #000a}
 .card .badge{position:absolute;left:0;bottom:2px;z-index:2}
 .card.has{border-color:#e0bf6caa;box-shadow:inset 0 0 0 1px #e0bf6c55}
@@ -156,7 +156,7 @@ footer{position:fixed;bottom:16px;left:30px;right:30px;font-size:.6em;letter-spa
 #sel-info{font:1.05em Georgia,serif}
 .order-buttons{display:flex;gap:6px;margin:10px 0 8px}.order-buttons button{font-size:.85em;padding:.45em .9em}
 .hint{display:block;font-size:.72em;color:#a6b59e}.hint b{color:var(--gold);font-weight:600}
-#flag-banner{position:absolute;left:50%;top:140px;transform:translateX(-50%);z-index:5;padding:12px 22px;text-align:center;max-width:640px}
+#flag-banner{position:absolute;right:24px;bottom:20px;z-index:5;padding:12px 20px;max-width:min(460px,calc(100vw - 48px))}
 #flag-banner h3{font:normal 1.5em Georgia,serif;margin:4px 0}#flag-banner p{margin:0;font-size:.85em;color:var(--muted)}
 /* bölük sancakları: takım renginde çerçeve, içinde silah (ve at) ikonu */
 #unit-tags{position:absolute;inset:0;pointer-events:none;z-index:3;overflow:hidden}
@@ -202,5 +202,7 @@ dialog::backdrop{background:#102017a8;backdrop-filter:blur(4px)}
 .controls-title{font-size:.7em!important;letter-spacing:2px;color:var(--gold)!important;margin:16px 0 6px}
 #help-dialog{width:540px}#help-dialog .primary{margin-top:10px;width:100%}
 
+/* alçak pencere (itch.io 1280×720 gömülü): kart yan sütunu sıkışır, menzil/hız satırları kesilmesin */
+@media(max-height:800px){.card .side{gap:2px;padding-top:0}.card .items img{width:1.05em;height:1.05em}.card .stats{font-size:.6em;line-height:1.05}.card .up{font-size:.62em}.prep-hint{display:none}}
 @media(max-width:1250px){#cards{grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:none;grid-auto-rows:minmax(170px,auto);overflow-y:auto}#prep-team{display:none}.eco-card{min-width:0}}
-@media(max-width:900px){.brand small{display:none}#cards{grid-template-columns:repeat(4,minmax(0,1fr))}.prep-head{flex-wrap:wrap}#orders{min-width:0;right:12px;left:12px;bottom:12px}.hint{display:none}.site-name{display:none}#koltuklar,.b-ayar{grid-template-columns:1fr}.cevrim-dugmeler{grid-template-columns:1fr}}
+@media(max-width:900px){#flag-banner{right:12px;left:12px;bottom:auto;top:110px;max-width:none}.brand small{display:none}#cards{grid-template-columns:repeat(4,minmax(0,1fr))}.prep-head{flex-wrap:wrap}#orders{min-width:0;right:12px;left:12px;bottom:12px}.hint{display:none}.site-name{display:none}#koltuklar,.b-ayar{grid-template-columns:1fr}.cevrim-dugmeler{grid-template-columns:1fr}}

@@ -10,7 +10,9 @@
     "test": "node --test tests/sim.test.mjs tests/match.test.mjs tests/online.test.mjs",
     "olcum": "node scripts/mac-olcum.mjs",
     "build:web": "node scripts/build.mjs",
-    "deploy:web": "node scripts/build.mjs && npx wrangler@4 deploy"
+    "deploy:web": "node scripts/build.mjs && npx wrangler@4 deploy",
+    "dil": "node scripts/dil-denetim.mjs",
+    "itch": "node scripts/itch.mjs"
   },
   "dependencies": {
     "ws": "^8.22.1"

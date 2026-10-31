@@ -60,11 +60,16 @@ To see a list of supported npm commands, run:
   npm help (çevrim içi odalar aynı portta, ws). Henüz Docker ve tunnel yok.
 
 
+## Dil
+
+Türkçe + İngilizce (josephuz/docs/dil-standardi.md): `src/dil.js` ortak modül, sözlükler `src/diller/tr.js` ve `en.js`, `npm run dil` denetler. Dil tarayıcıya göre açılır, `?dil=en` ya da sağ üstteki EN / TR düğmesiyle değişir. Sınıf, takım ve bot adları ortak dosyalarda (sunucu da kullanır) anahtar olarak durur, arayüzde çevrilir.
+
 ## Yayın
 
 - İstemci: Cloudflare Worker, `akinvar.josephuz.com` → `npm run deploy:web`
 - Sunucu: Docker + Cloudflare Tunnel, `akinvar-sunucu.josephuz.com` → `docker compose --profile tunnel up -d --build`
   (`.env` içinde `TUNNEL_TOKEN`, paneldeki rota `http://localhost:5240`).
+- itch.io: `npm run itch` → `artifacts/akinvar-itch.zip`; sayfa metni ve görseller [docs/itch/](docs/itch/sayfa.md).
 
 ## Lisans / License
 

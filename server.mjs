@@ -32,10 +32,10 @@ const server = http.createServer(async (req, res) => {
   } catch { res.writeHead(404); res.end('Bulunamadı'); }
 });
 
-/** WebSocket yalnız bilinen sayfalardan: aynı adres, *.josephuz.com, localhost. Origin'siz istemciler (testler) kabul. */
+/** WebSocket yalnız bilinen sayfalardan: aynı adres, *.josephuz.com, itch.io (*.itch.zone, *.itch.io), localhost. Origin'siz istemciler (testler) kabul. */
 function allowedOrigin(req) {
   const origin = req.headers.origin; if (!origin) return true;
-  try { const u = new URL(origin); return u.host === req.headers.host || u.hostname === 'josephuz.com' || u.hostname.endsWith('.josephuz.com') || u.hostname === 'localhost' || u.hostname === '127.0.0.1'; } catch { return false; }
+  try { const u = new URL(origin); return u.host === req.headers.host || u.hostname === 'josephuz.com' || u.hostname.endsWith('.josephuz.com') || u.hostname.endsWith('.itch.zone') || u.hostname.endsWith('.itch.io') || u.hostname === 'localhost' || u.hostname === '127.0.0.1'; } catch { return false; }
 }
 const wss = new WebSocketServer({ server, maxPayload: 16 * 1024, verifyClient: ({ req }) => allowedOrigin(req) });
 wss.on('connection', (ws) => rooms.attach(ws));

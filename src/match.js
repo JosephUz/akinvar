@@ -23,8 +23,8 @@ export function createMatch({ teamSize = 1, flagHp = 100, difficulty = 'orta', s
     const id = players.length, seat = seats ? seats[id] : null, human = seats ? !!seat : humans.includes(id);
     const pers = PERSONALITIES[(rng() * PERSONALITIES.length) | 0];
     players.push({
-      id, team, human, personality: pers.key, botName: pers.name,
-      name: seat?.name ?? (human ? 'Sen' : pers.name), color: TEAMS[team].shades[k % 5],
+      id, team, human, personality: pers.key, botName: pers.key,
+      name: seat?.name ?? (human ? '' : pers.key), color: TEAMS[team].shades[k % 5], // bot adı arayüzde kisilik.<key>
       gold: 0, eco: 0, talim: zeros(), hp: flagHp, maxHp: flagHp, out: false,
       units: [], ready: false, bought: { eco: 0, talim: zeros() }, lastUnits: [],
     });

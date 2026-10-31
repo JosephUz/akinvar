@@ -83,6 +83,9 @@ Hazırlık ekranı alt bant değil, ekranı dolduran bir kart ızgarasıdır.
 
 ### 3. Bayrak evresi (10 sn) ✅
 
+- **Ölen asker de can götürür (2026-10-31, Yusuf):** savaşta ölen her asker **kendi** sahibinin bayrağından −1 götürür; turu kazanan da kaybeden de, alan dışında ölen de sayılır. Savaş sırasında üstteki bayrak canları canlı düşer. Canı biten oyuncu bayrak evresine kalmadan elenir. Sağ kalanlar aşağıdaki gibi **seçilen rakip** bayraktan götürür.
+  - Bot maçları ölçümü (2v2): 100 can her maçta 1 turda biter; 1.000 can 7–15 tur; 10.000 can 55–122 tur.
+
 - Savaş bitince kamera **yukarı çıkar ve uzaklaşır**. Bütün bayraklar ve kazanan takımın sağ kalan askerleri tek bakışta görünür. Herkes, kaybedenler ve elenenler dahil, olup biteni izler.
 - Rakip bayrakların üstünde canları büyük yazıyla görünür.
 - Kazanan takımın her oyuncusu **kendi askerlerini seçer** (savaştaki seçim kurallarıyla) ve **bir rakip bayrağa tıklar**. Askerler koşup bayrağa vurur:

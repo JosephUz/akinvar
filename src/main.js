@@ -6,7 +6,7 @@ import { step, command, visibleTo, createBattle, applySnapshot, PER_BOLUK } from
 import { CLASSES, FAMILIES, HIT, CLASS_COUNT } from './units.js';
 import {
   createMatch, startBattle, startFlags, endRound, buyUnit, refundUnit, buyEco, refundEco, buyTalim, refundTalim,
-  setReady, ecoCost, talimCost, income,
+  setReady, ecoCost, talimCost, income, battleLosses,
 } from './match.js';
 import { View } from './view.js';
 import { sunucuBaglanti } from './ag.js';
@@ -135,7 +135,7 @@ function toFlags() {
 }
 
 /** Tur bitti. Tek başına: maçı burada ilerletir. Çevrim içi: sunucunun yeni maç görünümü gelmiştir (before = eski canlar). */
-function roundOver(before = new Map(m.players.map((p) => [p.id, p.hp])), result = null) {
+function roundOver(before = new Map(m.players.map((p) => [p.id, m.hpBefore?.[p.id] ?? p.hp])), result = null) {
   state = 'roundEnd'; $('flag-banner').hidden = true; $('orders').hidden = true;
   if (!online) endRound(m);
   const lost = m.players.filter((p) => before.get(p.id) !== p.hp).map((p) => `${p.name} −${num(before.get(p.id) - p.hp)}${p.out ? ' (elendi)' : ''}`);
@@ -739,8 +739,12 @@ function hud(now = performance.now()) {
   if (!m || state === 'menu') return;
   if (state === 'prep') { $('prep-time').textContent = fmt(prepLeft); $('prep-time').classList.toggle('warn', prepLeft < 10); }
   $('round').textContent = `TUR ${m.round}`;
-  $('flags').innerHTML = [0, 1].map((t) => `<div class="side ${t ? 'red' : 'blue'}">${m.players.filter((p) => p.team === t).map((p) =>
-    `<span class="chip ${p === me ? 'me' : ''} ${p.out ? 'out' : ''}"><i style="background:${p.color}"></i>${esc(p.name)} <b>⚑ ${num(p.hp)}</b></span>`).join('')}</div>`).join('');
+  // Savaş sürerken ölen her asker sahibinin bayrağından düşer (tek başına: savaş sonunda işlenir; çevrim içi: tur sonu mesajıyla).
+  const live = w && m.order && (state === 'battle' || (state === 'flag' && online)) ? battleLosses(m, w) : null;
+  $('flags').innerHTML = [0, 1].map((t) => `<div class="side ${t ? 'red' : 'blue'}">${m.players.filter((p) => p.team === t).map((p) => {
+    const hp = Math.max(0, p.hp - (live?.get(p.id) ?? 0));
+    return `<span class="chip ${p === me ? 'me' : ''} ${p.out || !hp ? 'out' : ''}"><i style="background:${p.color}"></i>${esc(p.name)} <b>⚑ ${num(hp)}</b></span>`;
+  }).join('')}</div>`).join('');
   if (!w || state === 'prep') { $('score').hidden = true; $('zone').textContent = ''; return; }
   $('score').hidden = false;
   $('blue').textContent = num(w.alive[0]); $('red').textContent = num(w.alive[1]);

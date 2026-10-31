@@ -106,6 +106,7 @@ export const allReady = (m) => m.players.every((p) => p.ready);
 
 export function startBattle(m) {
   m.phase = 'battle';
+  m.hpBefore = Object.fromEntries(m.players.map((p) => [p.id, p.hp])); // tur sonu özeti: ölenler + bayrak evresi
   const active = m.players.filter((p) => !p.out);
   m.order = active.map((p) => p.id); // savaştaki oyuncu sırası → maç oyuncusu
   // Kurulum çevrim içi istemcilere aynen gider: aynı tohum ve aynı ordular aynı savaşı kurar.
@@ -118,11 +119,27 @@ export function startBattle(m) {
   return m.battle;
 }
 
-/** Savaş bitti: kaybeden takımın ayaktaki oyuncularının bayrakları sahaya dikilir, bayrak evresi başlar. */
+/** Savaşta ölen askerler (kazanan ya da kaybeden, alan dışında ölen de): oyuncu başına sayı. Bayrağa gidenler sayılmaz. */
+export function battleLosses(m, w = m.battle) {
+  const lost = new Map();
+  for (let i = 0; i < w.N; i++) if (w.hp[i] <= 0 && !w.spent[i]) { const id = m.order[w.bowner[w.boluk[i]]]; lost.set(id, (lost.get(id) ?? 0) + 1); }
+  return lost;
+}
+
+/**
+ * Savaş bitti. Önce her oyuncunun ölen askeri kadar kendi bayrağından can gider; canı biten elenir.
+ * Sonra kaybeden takımın ayaktaki oyuncularının bayrakları dikilir: kazananların sağ kalanları onlara yüklenir.
+ */
 export function startFlags(m) {
   const w = m.battle;
+  m.losses = {};
+  for (const [id, n] of battleLosses(m)) {
+    const p = m.players[id]; m.losses[id] = n;
+    p.hp = Math.max(0, p.hp - n); if (!p.hp) p.out = true;
+  }
   if (w.winner !== 0 && w.winner !== 1) { m.phase = 'flag'; w.phase = 'done'; return; }
   const losers = alivePlayers(m, 1 - w.winner);
+  if (!losers.length || !alivePlayers(m, w.winner).length) { m.phase = 'flag'; w.phase = 'done'; return; }
   // Bayraklar sağ kalanların ortasının önünde bir yay üstünde.
   let x = 0, z = 0, n = 0;
   for (let i = 0; i < w.N; i++) if (w.hp[i] > 0) { x += w.x[i]; z += w.z[i]; n++; }
@@ -146,9 +163,10 @@ export function endRound(m) {
     p.hp = f.hp;
     if (p.hp <= 0) { p.hp = 0; p.out = true; }
   }
-  m.log.push({ round: m.round, winner: w.winner, flags: w.flags.map((f) => ({ player: f.player, hits: f.hits })) });
+  m.log.push({ round: m.round, winner: w.winner, losses: m.losses ?? {}, flags: w.flags.map((f) => ({ player: f.player, hits: f.hits })) });
   const left = [0, 1].map((t) => alivePlayers(m, t).length);
-  if (!left[0] || !left[1]) { m.phase = 'over'; m.winner = left[0] ? 0 : 1; return; }
+  // İki takım birden düştüyse turu kazanan maçı da kazanır.
+  if (!left[0] || !left[1]) { m.phase = 'over'; m.winner = left[0] ? 0 : left[1] ? 1 : w.winner === 1 ? 1 : 0; return; }
   startRound(m);
 }
 

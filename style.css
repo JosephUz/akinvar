@@ -9,7 +9,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 button.active,button.secili{border-color:var(--gold);color:var(--gold);background:#3a3f2a}
 button.primary{background:var(--gold);color:#242b21;border-color:#efd59a;letter-spacing:1.4px;font-weight:800;padding:.95em 1.3em}
 button.primary:hover:not(:disabled){background:#efd59a}
-button.primary span{float:right;margin-left:1.4em}
+button.primary>span:last-child:not(:first-child){float:right;margin-left:1.4em} /* ok sağda; çeviri için yazı da span içinde */
 .outline{background:#192c23c9}
 button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
 [hidden]{display:none!important}

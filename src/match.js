@@ -8,7 +8,8 @@ const zeros = () => new Array(CLASS_COUNT).fill(0); // sınıf başına gelişti
 import { createBattle, startFlagPhase, mulberry32, command, PER_BOLUK } from './sim.js';
 
 export const ecoCost = (level) => ECONOMY.levelCost * (level + 1);
-export const talimCost = (level) => TALIM.cost * (level + 1);
+/** Geliştir bedeli sınıfın bölük fiyatına bağlı: ucuz askerin canı ucuz, çeliğinki pahalı. */
+export const talimCost = (cls, level) => Math.round((CLASSES[cls].cost * TALIM.k * (level + 1)) / 10) * 10;
 export const income = (p) => ECONOMY.roundIncome + p.eco * ECONOMY.levelIncome;
 
 /**
@@ -69,14 +70,14 @@ export function refundEco(m, p) {
 /** Geliştir: o sınıfın her askerine +1 can (kalıcı). */
 export function buyTalim(m, p, family) {
   if (!(family >= 0 && family < CLASS_COUNT)) return false;
-  const lv = p.talim[family], cost = talimCost(lv);
+  const lv = p.talim[family], cost = talimCost(family, lv);
   if (m.phase !== 'prep' || p.out || p.ready || lv >= TALIM.max || p.gold < cost) return false;
   p.gold -= cost; p.talim[family]++; p.bought.talim[family]++; return true;
 }
 export function refundTalim(m, p, family) {
   if (!(family >= 0 && family < CLASS_COUNT)) return false;
   if (m.phase !== 'prep' || p.ready || !p.bought.talim[family]) return false;
-  p.talim[family]--; p.bought.talim[family]--; p.gold += talimCost(p.talim[family]); return true;
+  p.talim[family]--; p.bought.talim[family]--; p.gold += talimCost(family, p.talim[family]); return true;
 }
 export function setReady(m, p) { p.ready = true; }
 
@@ -171,7 +172,7 @@ export function botPrep(m, p) {
   // 2) Geliştir: dengeli ve karşı kurucu, en çok bastığı sınıfı
   if ((p.personality === 'dengeli' || p.personality === 'karsi') && r >= 3) {
     const fam = favoriteClass(p);
-    if (fam >= 0 && p.gold - talimCost(p.talim[fam]) >= 400) buyTalim(m, p, fam);
+    if (fam >= 0 && p.gold - talimCost(fam, p.talim[fam]) >= 400) buyTalim(m, p, fam);
   }
   // 3) Askerler: kalan parayla. Açgözlü ve Dengeli sıradaki ekonomi seviyesi için bir kısmını biriktirir.
   const saving = p.eco < ecoTarget ? ({ acgozlu: 0.6, dengeli: 0.3 }[p.personality] ?? 0) : 0;

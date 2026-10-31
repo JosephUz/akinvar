@@ -24,7 +24,7 @@ export const ZONE = { wait: 30, shrink: 150, damageEvery: 1.5 };
 
 // Tur: hazırlık → savaş → bayrak evresi.
 export const ECONOMY = { roundIncome: 1000, levelCost: 400, levelIncome: 150 }; // seviye n bedeli 400 × n
-export const TALIM = { cost: 500, max: 8 };                                       // Geliştir: sınıf başına, seviye n bedeli 500 × n, +1 can
+export const TALIM = { k: 2, max: 8 };                                            // Geliştir: sınıf başına +1 can, seviye n bedeli bölük fiyatı × 2 × n
 export const PREP_TIME = 45;
 export const FLAG_TIME = 10;
 export const FLAG_HP = [100, 1000, 10000, 100000];

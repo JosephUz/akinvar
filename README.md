@@ -26,7 +26,7 @@ Tarayıcıda Three.js ile çalışan, Total War esintili, tur tabanlı takım or
 
 - **Faz 2 (tur döngüsü):**
   - Ana ekranda takım (1v1–5v5, boş koltuklar bot) ve bayrak canı (100 / 1.000 / 10.000 / 100.000).
-  - Hazırlık (45 sn): tam ekran kart ızgarası. Ekonomi (400 × n, tur başı +150) ve aile başına talim (500 × n, +1 can) kalıcı; throneofcurse'ün 39 sınıfı 4 × 10 ızgarada, her tık bir bölük, sağ tık tam iade.
+  - Hazırlık (45 sn): tam ekran kart ızgarası. Ekonomi (400 × n, tur başı +150) ve sınıf başına Geliştir (bölük fiyatı × 2 × n, +1 can) kalıcı; throneofcurse'ün 39 sınıfı 4 × 10 ızgarada, her tık bir bölük, sağ tık tam iade.
   - Savaş: throneofcurse üstünlük tablosu, arkadan vuruş +20, menzil, vuruş aralığı, atlı ve zırh hızı. Okçular ok atar.
   - Bayrak evresi (10 sn): kazananların sağ kalanları seçilen rakip bayrağa koşar, her biri bir can götürür; gönderilmeyen dağılır.
   - Bot kişilikleri: Açgözlü, Akıncı, Dengeli, Karşı kurucu.

@@ -13,12 +13,14 @@ test('tur başı gelir, kart al ve geri ver tam iade', () => {
   assert.ok(!refundUnit(m, me, c.index), 'almadığını geri veremez');
 });
 
-test('ekonomi 400 × n, her seviye tur başına +150; talim 500 × n', () => {
+test('ekonomi 400 × n, her seviye tur başına +150; talim bölük fiyatı × 2 × n', () => {
   const m = createMatch({ seed: 2 }), me = m.players[0];
   assert.equal(ecoCost(0), 400); assert.equal(ecoCost(1), 800);
   assert.ok(buyEco(m, me)); assert.equal(me.gold, 600); assert.equal(income(me), 1150);
   assert.ok(refundEco(m, me)); assert.equal(me.gold, 1000);
-  assert.equal(talimCost(0), 500); assert.equal(talimCost(1), 1000);
+  const ucuz = CLASSES[0], pahali = CLASSES[CLASSES.length - 1];
+  assert.equal(talimCost(0, 0), Math.round(ucuz.cost * 2 / 10) * 10); assert.equal(talimCost(0, 1), Math.round(ucuz.cost * 4 / 10) * 10);
+  assert.ok(talimCost(pahali.index, 0) > talimCost(0, 0) * 5, 'çelik askerin geliştirmesi çok daha pahalı');
   assert.ok(buyTalim(m, me, 2)); assert.equal(me.talim[2], 1);
 });
 

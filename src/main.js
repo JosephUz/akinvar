@@ -191,7 +191,7 @@ function renderPrep() {
   const counts = new Map();
   for (const u of me.units) counts.set(u, (counts.get(u) ?? 0) + 1);
   $('cards').innerHTML = CLASSES.map((c) => {
-    const n = counts.get(c.index) ?? 0, fam = FAMILIES[c.family], lv = me.talim[c.index], up = talimCost(lv), max = lv >= TALIM.max;
+    const n = counts.get(c.index) ?? 0, fam = FAMILIES[c.family], lv = me.talim[c.index], up = talimCost(c.index, lv), max = lv >= TALIM.max;
     return `<div class="card unit ${me.gold < c.cost ? 'poor' : ''} ${n ? 'has' : ''}" data-cls="${c.index}" style="--fam:${fam.color}" role="button" tabindex="0" title="${c.title} · ${c.detail}">
       <div class="main">
         <div class="pic"><img class="soldier" src="${IMG(c)}" alt="" draggable="false" style="object-view-box:${viewBox.get(IMG(c)) ?? 'none'}">
@@ -233,7 +233,7 @@ function shake(el) { el.classList.remove('shake'); void el.offsetWidth; el.class
 // Hazırlık işlemi: tek başına maça doğrudan, çevrim içi sunucuya (ve anında geri bildirim için görünüme de) uygulanır.
 const ACT = {
   al: { run: (c) => buyUnit(m, me, c), back: (c) => refundUnit(m, me, c), cost: (c) => CLASSES[c].cost },
-  talim: { run: (c) => buyTalim(m, me, c), back: (c) => refundTalim(m, me, c), cost: (c) => talimCost(me.talim[c]), backCost: (c) => talimCost(me.talim[c]) },
+  talim: { run: (c) => buyTalim(m, me, c), back: (c) => refundTalim(m, me, c), cost: (c) => talimCost(c, me.talim[c]), backCost: (c) => talimCost(c, me.talim[c]) },
   eko: { run: () => buyEco(m, me), back: () => refundEco(m, me), cost: () => ecoCost(me.eco), backCost: () => ecoCost(me.eco) },
 };
 const NET = { al: ['al', 'geri'], talim: ['talim', 'talimGeri'], eko: ['eko', 'ekoGeri'] };

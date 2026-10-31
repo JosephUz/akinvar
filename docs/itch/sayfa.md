@@ -45,7 +45,7 @@ Renkler oyunun kendi paletinden (style.css :root).
 | Font | Lato, Size Large (değişmez) |
 | More options → Header font | Lora (yoksa Lato) |
 | Screenshots | Sidebar |
-| Banner | `banner-960x240.png` |
+| Banner | `banner-1280x240.png` |
 | Background | `arka-plan-1920x1080.jpg` (Repeat: No repeat, Position: Center, Fixed) |
 | Embed BG | `embed-bg-1280x720.jpg` |
 

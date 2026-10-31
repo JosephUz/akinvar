@@ -127,6 +127,15 @@ Hazırlık ekranı alt bant değil, ekranı dolduran bir kart ızgarasıdır.
 
 Zorluk ayarı kişilik karışımı ve karar kalitesiyle yapılır. Savaşta botlar throneofcurse'teki hedefleme yapay zekasını kullanır.
 
+## Faz 3 sonrası değişenler (2026-10-31, Yusuf)
+
+- **Talim → Geliştir, sınıf başına:** her kartın sağ üstünde ⬆ Geliştir; o sınıfın askerine +1 can (500 × n, en çok 8). Ayrı talim kartları kalktı.
+- **Kart sırası:** fiyata göre, en ucuz sol üstte. Kartlarda throneofcurse asker görseli ve eşya ikonları; altta bilgi şeridi (malzeme, üstün / zayıf olduğu sınıflar).
+- **Fiyat:** throneofcurse üretim tariflerinden ham madde (odun 1, demir 2, deri 1,5, yem 0,5) → 40 + 36 × değer^0,35, 10'a yuvarlı. Bir çelik bölüğü ~3 demir bölüğü fiyatına ve onları çoğunlukla yener.
+- **Eşit şartlar:** emirsiz bölük, oyuncununki de, botun yapay zekâsıyla savaşır; emir alan bölük oyuncunun olur (Dur: yerinde bekler).
+- **Bot zorluğu:** Kolay (paranın %70'i, karşı kurmaz) · Orta (%85) · Zor (hepsi).
+- **Çevrim içi:** oda standardı; maçı sunucu yürütür, istemci aynı adımları koşar.
+
 ## Kapsam dışı ✅
 
 - PvE dalga kipi (belki ileride).

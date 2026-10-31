@@ -110,27 +110,26 @@ footer{position:fixed;bottom:16px;left:30px;right:30px;font-size:.6em;letter-spa
 #prep-team .pl.me b{color:var(--gold)}#prep-team .pl.out{opacity:.4}
 
 #cards{flex:1;min-height:0;display:grid;grid-template-columns:repeat(10,minmax(0,1fr));grid-template-rows:repeat(4,minmax(0,1fr));gap:8px}
-.card{position:relative;display:flex;flex-direction:column;align-items:stretch;text-align:left;padding:6px 8px 6px;background:linear-gradient(#25392dee,#1a2b21f2);border:1px solid #71826455;border-top:3px solid var(--fam,#e0bf6c);border-radius:6px;min-height:0;overflow:hidden;cursor:pointer;user-select:none;transition:transform .08s,background .12s,border-color .12s}
+.card{position:relative;display:flex;flex-direction:column;align-items:stretch;text-align:left;padding:3px 6px 4px 3px;background:linear-gradient(#25392dee,#1a2b21f2);border:1px solid #71826455;border-top:3px solid var(--fam,#e0bf6c);border-radius:6px;min-height:0;overflow:hidden;cursor:pointer;user-select:none;transition:transform .08s,background .12s,border-color .12s}
 .card:hover{background:linear-gradient(#304736,#213326);border-color:#d8c47e;border-top-color:var(--fam,#e0bf6c)}
 .card:active{transform:scale(.97)}
-.card-top{display:flex;justify-content:space-between;align-items:center;gap:4px;z-index:1}
-.card .fam{font-size:.66em;letter-spacing:.12em;color:var(--fam,#e0bf6c);font-weight:800;text-transform:uppercase}
-.card .up{padding:.12em .45em;font-size:.72em;font-weight:700;border-radius:10px;background:#122019d9;border-color:#e0bf6c77;color:#ffd77e;white-space:nowrap}
-.card .up em{font-style:normal;color:#9fe0a0;margin-right:4px}.card .up.on{border-color:#9fe0a0aa}
-.card .up.off{opacity:.45}.card .up:hover{background:#3d4f30}
-.card .pic{position:relative;flex:1;min-height:0;margin:2px -4px 0;pointer-events:none}
-.card .pic{overflow:hidden}
-.card .soldier{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;transform:scale(1.45);transform-origin:50% 58%;filter:drop-shadow(0 5px 7px #000a)} /* throneofcurse görsellerinin kenar boşluğu kırpılır */
-.card .items{position:absolute;right:0;bottom:0;display:flex;flex-direction:column;gap:2px}
-.card .items img{width:1.55em;height:1.55em;background:#0f1b14d9;border:1px solid #71826477;border-radius:5px;padding:1px}
-.card .name{font:600 .95em/1.15 Georgia,serif;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.card small{font-size:.72em;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.card .foot span{white-space:nowrap}
-.card .foot{display:flex;flex-wrap:nowrap;align-items:baseline;gap:6px;font-size:.74em;color:#b8c7ad;font-variant-numeric:tabular-nums;margin-top:2px}
-.card .foot .hp{color:#ff9f8a}.card .foot sup{color:#9fe0a0;font-weight:800;margin-left:1px}
-.card .price{margin-left:auto;font-size:1.3em;color:#ffd77e;font-weight:800}
+/* Üstte: solda asker görseli (dolu alanı: main.js measure), sağda geliştir, eşyalar, değerler, fiyat. Altta ad. */
+.card .main{flex:1;min-height:0;display:flex;gap:4px}
+.card .pic{position:relative;flex:1 1 62%;min-width:0;pointer-events:none}
+.card .soldier{position:absolute;inset:14px 0 0;width:100%;height:calc(100% - 14px);object-fit:contain;object-position:50% 100%;filter:drop-shadow(0 5px 7px #000a)}
+.card .fam{position:absolute;left:2px;top:0;font-size:.6em;letter-spacing:.12em;color:var(--fam,#e0bf6c);font-weight:800;text-transform:uppercase}
+.card .side{flex:0 1 36%;overflow:hidden;min-width:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;padding-top:2px}
+.card .up{padding:.1em .45em;font-size:.68em;font-weight:700;border-radius:10px;background:#122019d9;border-color:#e0bf6c77;color:#ffd77e;white-space:nowrap}
+.card .up.on{border-color:#9fe0a0aa;color:#9fe0a0}.card .up.off{opacity:.45}.card .up:hover{background:#3d4f30}
+.card .items{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:2px}
+.card .items img{width:1.25em;height:1.25em;background:#0f1b14d9;border:1px solid #71826477;border-radius:5px;padding:1px}
+.card .stats{margin-top:auto;display:flex;flex-direction:column;align-items:flex-end;font-size:.68em;line-height:1.15;color:#b8c7ad;font-variant-numeric:tabular-nums}
+.card .stats span{white-space:nowrap}.card .stats .hp{color:#ff9f8a}.card .stats sup{color:#9fe0a0;font-weight:800;margin-left:1px}
+.card .row-name{display:flex;align-items:baseline;gap:6px;margin:2px 0 0 3px}
+.card .price{margin-left:auto;font-size:1.05em;color:#ffd77e;font-weight:800;line-height:1;white-space:nowrap}
+.card .name{min-width:0;font:600 .84em/1.2 Georgia,serif;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card .badge,.eco-card .badge{background:var(--gold);color:#1f2a1d;font-weight:900;font-size:1em;padding:2px 9px;border-radius:12px;box-shadow:0 2px 8px #000a}
-.card .badge{position:absolute;left:2px;bottom:2px;z-index:2}
+.card .badge{position:absolute;left:0;bottom:2px;z-index:2}
 .card.has{border-color:#e0bf6caa;box-shadow:inset 0 0 0 1px #e0bf6c55}
 .card.poor .soldier{filter:grayscale(.85) brightness(.6)}.card.poor .name,.card.poor .price{opacity:.45}
 .card.ready{align-items:center;justify-content:center;background:var(--gold);color:#1f2a1d;font-weight:900;letter-spacing:3px;font-size:1.25em;border-top-color:#efd59a}

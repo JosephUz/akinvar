@@ -20,6 +20,29 @@ const dec = (n) => n.toFixed(1).replace('.', ',');
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const IMG = (c) => `img/asker/${c.img}.png`, ICON = (k) => `img/ikon/${k}.png`;
 
+// throneofcurse asker görsellerinin çevresi saydam boşluk: her görselin dolu alanı bir kez ölçülür, kart yalnız o kutuyu
+// gösterir (object-view-box). Sabit büyütme bazılarını (uzun mızrak, baş) kesiyordu. Desteklemeyen tarayıcı tüm görseli gösterir.
+const viewBox = new Map();
+function measure(src) {
+  const img = new Image();
+  img.onload = () => {
+    const S = 128, cv = document.createElement('canvas'); cv.width = cv.height = S;
+    const g = cv.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0, S, S);
+    const d = g.getImageData(0, 0, S, S).data;
+    // Dolu piksellerin satır ve sütun dağılımı; uçlardaki %0,3'lük tek tük lekeler kutuya girmez.
+    const cols = new Float32Array(S), rows = new Float32Array(S); let total = 0;
+    for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) if (d[(y * S + x) * 4 + 3] > 60) { cols[x]++; rows[y]++; total++; }
+    if (!total) return;
+    const edge = (h, from) => { let acc = 0; for (let k = 0; k < S; k++) { const i = from ? k : S - 1 - k; acc += h[i]; if (acc > total * 0.003) return i; } return from ? 0 : S - 1; };
+    const x0 = edge(cols, true), x1 = edge(cols, false), y0 = edge(rows, true), y1 = edge(rows, false);
+    const pad = 2, pc = (v) => `${Math.max(0, (v / S) * 100).toFixed(1)}%`;
+    viewBox.set(src, `inset(${pc(y0 - pad)} ${pc(S - 1 - x1 - pad)} ${pc(S - 1 - y1 - pad)} ${pc(x0 - pad)})`);
+    for (const el of document.querySelectorAll(`img.soldier[src="${src}"]`)) el.style.objectViewBox = viewBox.get(src);
+  };
+  img.src = src;
+}
+for (const src of new Set(CLASSES.map(IMG))) measure(src);
+
 const view = new View($('scene'));
 view.setShadows(params.get('golge') !== '0');
 let m = null, w = null, me = null, myIdx = -1, acc = 0, last = performance.now(), speed = 1, paused = false;
@@ -170,13 +193,16 @@ function renderPrep() {
   $('cards').innerHTML = CLASSES.map((c) => {
     const n = counts.get(c.index) ?? 0, fam = FAMILIES[c.family], lv = me.talim[c.index], up = talimCost(lv), max = lv >= TALIM.max;
     return `<div class="card unit ${me.gold < c.cost ? 'poor' : ''} ${n ? 'has' : ''}" data-cls="${c.index}" style="--fam:${fam.color}" role="button" tabindex="0" title="${c.title} · ${c.detail}">
-      <div class="card-top"><span class="fam">${fam.name}</span>
-        <button class="up ${max || me.gold < up ? 'off' : ''} ${lv ? 'on' : ''}" data-up="${c.index}" title="Geliştir: bu sınıfın her askerine +1 can (seviye ${lv}/${TALIM.max})">⬆ ${max ? 'EN ÜST' : num(up)}</button></div>
-      <div class="pic"><img class="soldier" src="${IMG(c)}" alt="" draggable="false">
-        <div class="items">${c.items.map((k) => `<img src="${ICON(k)}" alt="">`).join('')}</div>
-        ${n ? `<span class="badge">×${n}</span>` : ''}</div>
-      <b class="name">${c.title}</b>
-      <div class="foot"><span class="hp" title="Can">♥ ${3 + lv}${lv ? `<sup>+${lv}</sup>` : ''}</span><span title="Menzil">⇢ ${dec(c.reach)}</span><span title="Hız">» ${dec(c.speed)}</span><span class="price">◉ ${num(c.cost)}</span></div>
+      <div class="main">
+        <div class="pic"><img class="soldier" src="${IMG(c)}" alt="" draggable="false" style="object-view-box:${viewBox.get(IMG(c)) ?? 'none'}">
+          <span class="fam">${fam.name}</span>${n ? `<span class="badge">×${n}</span>` : ''}</div>
+        <div class="side">
+          <button class="up ${max || me.gold < up ? 'off' : ''} ${lv ? 'on' : ''}" data-up="${c.index}" title="Geliştir: bu sınıfın her askerine +1 can (seviye ${lv}/${TALIM.max})">⬆ ${max ? 'EN ÜST' : num(up)}</button>
+          <div class="items">${c.items.map((k) => `<img src="${ICON(k)}" alt="">`).join('')}</div>
+          <div class="stats"><span class="hp" title="Can">♥ ${3 + lv}${lv ? `<sup>+${lv}</sup>` : ''}</span><span title="Menzil">⇢ ${dec(c.reach)}</span><span title="Hız">» ${dec(c.speed)}</span></div>
+        </div>
+      </div>
+      <div class="row-name"><b class="name">${c.title}</b><span class="price">◉ ${num(c.cost)}</span></div>
     </div>`;
   }).join('') + `<button class="card ready" id="ready" ${me.ready ? 'disabled' : ''}>${me.ready ? 'BEKLENİYOR…' : 'HAZIR <span>→</span>'}<small>${me.units.length} bölük · ${num(me.units.length * 20)} asker</small></button>`;
   $('prep').classList.toggle('waiting', !!me.ready);

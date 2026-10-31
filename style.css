@@ -158,6 +158,25 @@ footer{position:fixed;bottom:16px;left:30px;right:30px;font-size:.6em;letter-spa
 .hint{display:block;font-size:.72em;color:#a6b59e}.hint b{color:var(--gold);font-weight:600}
 #flag-banner{position:absolute;left:50%;top:140px;transform:translateX(-50%);z-index:5;padding:12px 22px;text-align:center;max-width:640px}
 #flag-banner h3{font:normal 1.5em Georgia,serif;margin:4px 0}#flag-banner p{margin:0;font-size:.85em;color:var(--muted)}
+/* bölük sancakları: takım renginde çerçeve, içinde silah (ve at) ikonu */
+#unit-tags{position:absolute;inset:0;pointer-events:none;z-index:3;overflow:hidden}
+.tag{position:absolute;left:0;top:0;display:flex;padding:2px 3px;background:#efe6cc;border:2px solid var(--team);border-top:5px solid var(--fam);border-radius:4px;box-shadow:0 2px 5px #0009;will-change:transform}
+#unit-tags .tag img{width:calc(26px * var(--s));height:calc(26px * var(--s));display:block}.tag img+img{margin-left:-3px}
+.tag.foe{background:#e9cfc4}
+.tag.sel{box-shadow:0 0 0 2px #fff,0 0 10px #fff9;background:#fffbe9}
+#deck{display:flex;flex-wrap:wrap;gap:12px 14px;margin:10px 4px 12px 0;max-width:min(680px,calc(100vw - 60px))}
+#deck:empty{display:none}
+.dk{position:relative;width:84px;font-size:.92em;padding:0 0 6px;display:flex;flex-direction:column;align-items:stretch;text-align:left;background:linear-gradient(#24372c,#1a2a20);border:1px solid var(--fam);border-top-width:3px;border-radius:6px;overflow:visible}
+.dk[data-stack="1"]{box-shadow:4px -4px 0 -1px #1d2d23,4px -4px 0 0 var(--fam)}
+.dk[data-stack="2"]{box-shadow:4px -4px 0 -1px #1d2d23,4px -4px 0 0 var(--fam),8px -8px 0 -1px #1a2920,8px -8px 0 0 var(--fam)}
+.dk[data-stack="3"]{box-shadow:4px -4px 0 -1px #1d2d23,4px -4px 0 0 var(--fam),8px -8px 0 -1px #1a2920,8px -8px 0 0 var(--fam),12px -12px 0 -1px #17251c,12px -12px 0 0 var(--fam)}
+.dk .soldier{height:60px;margin-top:14px;width:100%;object-fit:contain;object-position:50% 100%;pointer-events:none}
+.dk .fam{position:absolute;left:6px;top:4px;font-size:.6em;font-weight:800;letter-spacing:1.5px;color:var(--fam);text-transform:uppercase}
+.dk .badge{position:absolute;right:4px;top:3px;background:var(--gold);color:#222;font-weight:800;font-size:.72em;padding:0 5px;border-radius:3px}
+.dk b{font:600 .72em/1.2 Georgia,serif;padding:2px 6px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dk small{font-size:.65em;color:var(--muted);padding:0 6px}
+.dk .bar{height:4px;margin:3px 6px 2px;background:#0006;border-radius:2px}.dk .bar i{display:block;height:100%;background:#9fdc8a;border-radius:2px}
+.dk:hover{background:linear-gradient(#2e4636,#20332a)}
 #flag-labels{position:absolute;inset:0;pointer-events:none;z-index:4}
 .flag-label{position:absolute;transform:translate(-50%,-100%);background:#16291fe8;border:1px solid var(--gold);padding:4px 10px;text-align:center;white-space:nowrap}
 .flag-label b{display:block;font-size:.7em;letter-spacing:1px;color:var(--muted)}

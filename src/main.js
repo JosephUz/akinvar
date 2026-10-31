@@ -2,7 +2,7 @@
 // Tek başına: maç (match.js) ve savaş (sim.js) tarayıcıda. Çevrim içi: maçı sunucu yürütür; istemci savaşı sunucunun
 // adımları ve emirleriyle aynen koşar, anlıklarla düzeltir (server/odalar.mjs).
 import { TICK, ZONE, TEAMS, PREP_TIME, FLAG_TIME, FLAG_HP, TEAM_SIZES, TALIM, ECONOMY, DIFFICULTY } from './config.js';
-import { step, command, visibleTo, createBattle, applySnapshot } from './sim.js';
+import { step, command, visibleTo, createBattle, applySnapshot, PER_BOLUK } from './sim.js';
 import { CLASSES, FAMILIES, HIT, CLASS_COUNT } from './units.js';
 import {
   createMatch, startBattle, startFlags, endRound, buyUnit, refundUnit, buyEco, refundEco, buyTalim, refundTalim,
@@ -110,7 +110,7 @@ function setupBattle() {
   view.build(w, { team: me.team, colors: m.order.map((id) => m.players[id].color), selected: TEAMS[me.team].selected });
   view.fogOn = !me.out;
   $('prep').hidden = true; $('orders').hidden = me.out; state = 'battle'; acc = 0;
-  selected = new Set(); syncSelection(); focusArmy();
+  buildTags(); selected = new Set(); syncSelection(); focusArmy();
   if (!online && w.winner >= 0) toFlags(); // bir taraf hiç asker almadıysa savaş olmaz
   hud();
 }
@@ -269,10 +269,61 @@ function syncSelection() {
   view.setSelection(selected);
   let n = 0; const fams = new Set();
   for (const b of selected) { n += w.balive[b]; fams.add(CLASSES[w.bcls[b]].family); }
+  for (let b = 0; b < tagEls.length; b++) tagEls[b].classList.toggle('sel', selected.has(b));
+  renderDeck();
   $('sel-info').textContent = selected.size
     ? `${selected.size} bölük · ${num(n)} asker` + (fams.size === 1 ? ` · ${FAMILIES[[...fams][0]].name}` : '')
     : 'Seçili bölük yok · emirsiz bölükler kendi savaşır';
 }
+
+// ---------- bölük sancakları ve seçim destesi ----------
+
+// Her bölüğün üstünde silahının throneofcurse ikonu (atlıda at da): kılıç, mızrak, yay ve malzemesi bir bakışta.
+let tagEls = [], tagShown = [], deckSig = '';
+function buildTags() {
+  $('unit-tags').innerHTML = [...Array(w.B).keys()].map((b) => {
+    const c = CLASSES[w.bcls[b]], color = m.players[m.order[w.bowner[b]]].color;
+    return `<div class="tag ${w.bteam[b] === me.team ? 'own' : 'foe'} ${mine(b) ? 'mine' : ''}" style="--team:${color};--fam:${FAMILIES[c.family].color}"><img src="${ICON(c.items[0] ?? 'SOLDIER_TRAINING')}" alt="">${c.mounted ? `<img src="${ICON(c.items.at(-1))}" alt="">` : ''}</div>`;
+  }).join('');
+  tagEls = [...$('unit-tags').children]; tagShown = tagEls.map(() => false); deckSig = '';
+}
+function placeTags() {
+  const show = state === 'battle' || state === 'flag', proj = show && view.projector();
+  if (show) $('unit-tags').style.setProperty('--s', Math.max(0.55, Math.min(1.1, 26 / view.zoom)).toFixed(2));
+  for (let b = 0; b < tagEls.length; b++) {
+    let vis = show && b < w.B && w.balive[b] > 0 && (w.bteam[b] === me.team || !view.fogOn || visibleTo(w, me.team, w.cx[b], w.cz[b]));
+    const s = vis && proj(w.cx[b], w.cz[b], 2.6);
+    if (vis && !(s.x > 20 && s.x < innerWidth - 20 && s.y > 40 && s.y < innerHeight)) vis = false; // ekran dışındaki yarım görünmesin
+    if (vis !== tagShown[b]) { tagShown[b] = vis; tagEls[b].style.display = vis ? '' : 'none'; }
+    if (!vis) continue;
+    tagEls[b].style.transform = `translate(${s.x.toFixed(0)}px,${s.y.toFixed(0)}px) translate(-50%,-100%)`;
+  }
+}
+
+// Sol altta deste: seçili bölükler sınıf sınıf kart olarak. Aynı sınıftan birden çok bölük üst üste dizilir.
+function renderDeck() {
+  const groups = new Map();
+  for (const b of selected) {
+    const g = groups.get(w.bcls[b]) ?? { n: 0, alive: 0 }; g.n++; g.alive += w.balive[b]; groups.set(w.bcls[b], g);
+  }
+  const list = [...groups].sort((a, b) => CLASSES[a[0]].family - CLASSES[b[0]].family || a[0] - b[0]);
+  const sig = list.map(([c, g]) => `${c}:${g.n}:${g.alive}`).join(',');
+  if (sig === deckSig) return; deckSig = sig;
+  $('deck').innerHTML = list.map(([ci, g]) => {
+    const c = CLASSES[ci];
+    return `<button class="dk" data-cls="${ci}" data-stack="${Math.min(g.n, 4) - 1}" style="--fam:${FAMILIES[c.family].color}" title="${c.title} · ${c.detail}
+Tıkla: yalnız bunlar · Shift: seçimden çıkar">
+      <span class="fam">${FAMILIES[c.family].name}</span>${g.n > 1 ? `<span class="badge">×${g.n}</span>` : ''}
+      <img class="soldier" src="${IMG(c)}" alt="" draggable="false" style="object-view-box:${viewBox.get(IMG(c)) ?? 'none'}">
+      <b>${c.title}</b><span class="bar"><i style="width:${(100 * g.alive / (g.n * PER_BOLUK)).toFixed(0)}%"></i></span><small>${num(g.alive)} asker</small></button>`;
+  }).join('');
+}
+$('deck').addEventListener('click', (e) => {
+  const el = e.target.closest('.dk'); if (!el || !w) return;
+  const ci = +el.dataset.cls, base = [...selected];
+  selected = new Set(e.shiftKey ? base.filter((b) => w.bcls[b] !== ci) : base.filter((b) => w.bcls[b] === ci));
+  syncSelection();
+});
 
 function centers() {
   const cx = new Float32Array(w.B), cz = new Float32Array(w.B), n = new Int32Array(w.B);
@@ -650,6 +701,7 @@ function frame(now) {
     stats.drawSum += performance.now() - b;
   }
   if (state === 'flag' || state === 'roundEnd') placeFlagLabels();
+  if (tagEls.length) placeTags();
   stats.frames++;
   if (now - stats.since > 250) hud(now);
   requestAnimationFrame(frame);

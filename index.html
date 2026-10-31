@@ -12,6 +12,7 @@
   <div id="scene" aria-label="Savaş alanı"></div>
   <div id="selbox" hidden></div>
   <div id="flag-labels" aria-live="polite"></div>
+  <div id="unit-tags" aria-hidden="true"></div>
   <header id="header">
     <div class="brand"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M11 36V5l19 6-15 6v19z"/></svg><span>AKIN VAR<small>KUR. BUL. YÜKLEN.</small></span></div>
     <div id="hud" hidden>
@@ -85,6 +86,7 @@
   <div id="flag-banner" class="panel" hidden><span class="eyebrow">BAYRAK EVRESİ</span><h3 id="flag-title"></h3><p id="flag-hint"></p></div>
 
   <div id="orders" class="panel" hidden>
+    <div id="deck"></div>
     <span id="sel-info">Seçili bölük yok</span>
     <div class="order-buttons">
       <button id="select-all" title="Hepsini seç (` ya da Ctrl A)">Hepsini seç</button>
@@ -122,6 +124,7 @@
       <div><kbd>SOL TIK</kbd> Bölük seç (Shift ile ekle)</div>
       <div><kbd>SÜRÜKLE</kbd> Kutu içindekileri seç</div>
       <div><kbd>ÇİFT TIK</kbd> Ekrandaki aynı sınıfı seç</div>
+      <div><kbd>DESTE</kbd> Sol altta seçtiklerin: karta tık yalnız o sınıf · Shift ile çıkar</div>
       <div><kbd>SAĞ TIK</kbd> Yere: yürü · düşmana: saldır · bayrağa: yüklen</div>
       <div><kbd>1 2 3 4</kbd> Kılıçlı · mızraklı · okçu · atlı seç</div>
       <div><kbd>` · CTRL A</kbd> Hepsini seç</div>

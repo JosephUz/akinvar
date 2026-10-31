@@ -29,8 +29,12 @@ const box = (w, h, d, x, y, z) => at(new T.BoxGeometry(w, h, d), x, y, z);
 // Asker ayakları orijinde, yüzü +z yönünde. Gövde oyuncu rengine boyanır (vertex rengi × örnek rengi).
 const GEO = {
   body: () => merge([[box(0.42, 0.5, 0.26, 0, 0.25, 0), '#5a5a5a'], [box(0.52, 0.62, 0.32, 0, 0.81, 0), '#ffffff'], [box(0.56, 0.1, 0.36, 0, 0.56, 0), '#3c3428']]),
-  head: () => merge([[at(new T.SphereGeometry(0.17, 8, 6), 0, 1.3, 0), '#d8b48c'], [at(new T.ConeGeometry(0.2, 0.22, 8), 0, 1.47, 0), '#8c9096']]),
-  shield: () => merge([[box(0.08, 0.62, 0.5, 0.36, 0.82, 0.12), '#8a6a3e'], [box(0.1, 0.2, 0.18, 0.37, 0.82, 0.12), '#c9b27a']]),
+  head: () => merge([[at(new T.SphereGeometry(0.17, 8, 6), 0, 1.3, 0), '#d8b48c']]),
+  // Miğfer ve omuzluk beyaz çizilir; örnek rengi zırhın malzemesini verir (deri, zincir, çelik). Zırhsızda yoktur.
+  helm: () => merge([[at(new T.SphereGeometry(0.19, 8, 5, 0, Math.PI * 2, 0, Math.PI / 2), 0, 1.33, 0), '#ffffff'], [at(new T.ConeGeometry(0.16, 0.2, 8), 0, 1.58, 0), '#ffffff'], [box(0.04, 0.16, 0.05, 0, 1.3, 0.18), '#ffffff']]),
+  // Omuzluklar ve etek; gövdenin ortası takım renginde kalır.
+  armor: () => merge([[box(0.2, 0.16, 0.38, -0.33, 1.06, 0), '#ffffff'], [box(0.2, 0.16, 0.38, 0.33, 1.06, 0), '#ffffff'], [box(0.56, 0.2, 0.36, 0, 0.6, 0), '#ffffff'], [box(0.58, 0.06, 0.38, 0, 0.72, 0), '#5c4630']]),
+  shield: () => merge([[box(0.08, 0.62, 0.5, 0.36, 0.82, 0.12), '#ffffff'], [box(0.1, 0.2, 0.18, 0.37, 0.82, 0.12), '#c9b27a']]),
   horse: () => merge([
     [box(0.5, 0.55, 1.45, 0, 0.98, 0), '#6b4a2e'],
     ...[[-0.18, 0.5], [0.18, 0.5], [-0.18, -0.5], [0.18, -0.5]].map(([x, z]) => [box(0.13, 0.72, 0.13, x, 0.36, z), '#4d3420']),
@@ -46,6 +50,10 @@ const GEO = {
 };
 const HAND = { x: -0.33, y: 0.85, z: 0.05 };
 const WEAPON_MESH = { spear: 'spear', sword: 'sword', great: 'great', bow: 'bow', crossbow: 'crossbow', fist: null };
+
+// Malzemenin rengi: kalkan, miğfer, omuzluk ve silah örneklerine çarpan olarak. Çelik parlak, demir gri, tahta ve deri kahve.
+const MAT_COLOR = { wo: '#8a6438', le: '#7a5232', ir: '#7f8790', ch: '#9aa3ad', st: '#f4f8ff' };
+const WEAPON_TINT = { wo: [0.8, 0.62, 0.42], ir: [0.72, 0.75, 0.8], st: [1.3, 1.32, 1.4] };
 
 // Sis ve alan dışı renkleri (RGBA, 0–255)
 const FOG = [16, 26, 20, 165], OUT = [120, 34, 26, 125];
@@ -137,13 +145,24 @@ export class View {
       this.root.add(m); return m;
     };
     this.meshes = {};
-    for (const name of ['body', 'head', 'shield', 'horse', 'spear', 'sword', 'great', 'bow', 'crossbow']) this.meshes[name] = mk(name);
+    for (const name of ['body', 'head', 'helm', 'armor', 'shield', 'horse', 'spear', 'sword', 'great', 'bow', 'crossbow']) this.meshes[name] = mk(name);
     this.meshes.arrow = mk('arrow', MAX_ARROWS); this.arrowsShown = 0;
     // Bölük başına model bilgisi
     this.bmodel = Array.from({ length: w.B }, (_, b) => {
       const cls = CLASSES[w.bcls[b]], wm = WEAPON_MESH[cls.model];
-      return { weapon: wm ? this.meshes[wm].instanceMatrix.array : null, model: cls.model, shield: cls.shield > 0, mounted: cls.mounted };
+      const [wk, sk, , ak] = cls.key.split('-');
+      return { weapon: wm ? this.meshes[wm].instanceMatrix.array : null, wmesh: wm, wmat: wk.split(':')[1], smat: sk.split(':')[1], amat: ak === 'no' ? null : ak,
+        model: cls.model, shield: cls.shield > 0, armor: ak !== 'no', mounted: cls.mounted };
     });
+    // Malzeme renkleri bölük başına bir kez boyanır.
+    const tint = new T.Color(), paint = new Set();
+    for (let i = 0; i < w.N; i++) {
+      const md = this.bmodel[w.boluk[i]];
+      if (md.shield) { this.meshes.shield.setColorAt(i, tint.set(MAT_COLOR[md.smat] ?? '#8a6438')); paint.add('shield'); }
+      if (md.armor) { tint.set(MAT_COLOR[md.amat]); this.meshes.helm.setColorAt(i, tint); this.meshes.armor.setColorAt(i, tint); paint.add('helm').add('armor'); }
+      if (md.wmesh) { const k = WEAPON_TINT[md.wmat] ?? [1, 1, 1]; this.meshes[md.wmesh].setColorAt(i, tint.setRGB(k[0], k[1], k[2])); paint.add(md.wmesh); }
+    }
+    for (const name of paint) this.meshes[name].instanceColor.needsUpdate = true;
     this.colors = colors.map((x) => new T.Color(x));
     this.deadColors = this.colors.map((x) => x.clone().multiplyScalar(0.45));
     this.selColor = new T.Color(selected);
@@ -223,20 +242,20 @@ export class View {
 
   render(w, alpha, now, dt = 1 / 60) {
     const M = this.meshes, bm = M.body.instanceMatrix.array, hm = M.head.instanceMatrix.array;
-    const shm = M.shield.instanceMatrix.array, horm = M.horse.instanceMatrix.array;
+    const shm = M.shield.instanceMatrix.array, horm = M.horse.instanceMatrix.array, helm = M.helm.instanceMatrix.array, arm = M.armor.instanceMatrix.array;
     const { x, z, px, pz, face, hp, diedAt, swing, boluk, team, spent } = w, me = this.team;
     const fogOn = this.fogOn && w.phase === 'battle';
     let colors = false;
     for (let i = 0; i < w.N; i++) {
       const o = i * 16, bi = boluk[i], md = this.bmodel[bi];
       if (spent[i]) {
-        if (!this.gone[i]) { this.gone[i] = 1; for (const a of [bm, hm, shm, horm, md.weapon]) if (a) hide(a, o); }
+        if (!this.gone[i]) { this.gone[i] = 1; for (const a of [bm, hm, helm, arm, shm, horm, md.weapon]) if (a) hide(a, o); }
         continue;
       }
       const xi = px[i] + (x[i] - px[i]) * alpha, zi = pz[i] + (z[i] - pz[i]) * alpha;
       // Sisin içindeki düşman (ölüsü dahil) görünmez.
       if (fogOn && team[i] !== me && !visibleTo(w, me, xi, zi)) {
-        for (const a of [bm, hm, md.shield && shm, md.mounted && horm, md.weapon]) if (a) hide(a, o);
+        for (const a of [bm, hm, md.armor && helm, md.armor && arm, md.shield && shm, md.mounted && horm, md.weapon]) if (a) hide(a, o);
         continue;
       }
       const f = face[i], s = Math.sin(f), c = Math.cos(f);
@@ -250,6 +269,7 @@ export class View {
       if (md.mounted) writeMatrix(horm, o, xi, y + bob * 0.5, zi, s, c, pitch);
       writeMatrix(bm, o, xi, ry, zi, s, c, pitch);
       writeMatrix(hm, o, xi, ry, zi, s, c, pitch);
+      if (md.armor) { writeMatrix(helm, o, xi, ry, zi, s, c, pitch); writeMatrix(arm, o, xi, ry, zi, s, c, pitch); }
       if (md.shield) writeMatrix(shm, o, xi, ry, zi, s, c, pitch);
       if (md.weapon) {
         // El noktası: gövde döndürmesinden sonra dünyada. Vuruşta silah öne iner (mızrak), savrulur (kılıç), yay gerilir.
@@ -303,6 +323,12 @@ export class View {
     const ray = new T.Raycaster(); ray.setFromCamera(ndc, this.camera);
     const hit = new T.Vector3();
     return ray.ray.intersectPlane(new T.Plane(new T.Vector3(0, 1, 0), 0), hit) ? hit : null;
+  }
+
+  /** Çok nokta için: tuval kutusu bir kez okunur (bölük sancakları her karede). */
+  projector() {
+    const r = this.renderer.domElement.getBoundingClientRect(), v = new T.Vector3(), cam = this.camera;
+    return (x, z, y = 0.8) => { v.set(x, y, z).project(cam); return { x: r.left + ((v.x + 1) / 2) * r.width, y: r.top + ((1 - v.y) / 2) * r.height }; };
   }
 
   /** Dünya noktasının ekrandaki yeri (kutu seçimi, bayrak yazıları). */

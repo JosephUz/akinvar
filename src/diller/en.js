@@ -233,6 +233,6 @@ export default {
   'yardim.s10': '<kbd>WHEEL</kbd> Zoom in / out',
   'yardim.s11': '<kbd>Q / E</kbd> Rotate the camera · <kbd>F</kbd> center on your army',
   'yardim.s12': '<kbd>P</kbd> Pause (single player) · <kbd>ESC</kbd> clear selection, menu',
-  'yardim.kurallar': 'Every round you get ◉ 1,000 plus ◉ 150 per economy level. Companies without orders advance like bots and attack any enemy they see; a company you order follows you, and Hold keeps it in place. There is fog in battle, and the ring starts closing after 30 seconds. Every soldier who dies in battle costs its own flag one health, whether you win the round or not. The winning team sends its survivors to the enemy flags within 20 seconds; each soldier takes one health from that flag. A player whose flag falls is out.',
+  'yardim.kurallar': 'Every round you get ◉ 1,000; whatever you spend on economy is added to your income from then on (◉ 500 → ◉ 1,500, ◉ 750 more → ◉ 2,250). Companies without orders advance like bots and attack any enemy they see; a company you order follows you, and Hold keeps it in place. There is fog in battle, and the ring starts closing after 30 seconds. Every soldier who dies in battle costs its own flag one health, whether you win the round or not. The winning team sends its survivors to the enemy flags within 20 seconds; each soldier takes one health from that flag. A player whose flag falls is out.',
   'yardim.anladim': 'GOT IT',
 };

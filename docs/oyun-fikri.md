@@ -47,7 +47,7 @@ Bayrağı düşen oyuncu elenir. Bütün bayrakları düşen takım kaybeder.
 Hazırlık ekranı alt bant değil, ekranı dolduran bir kart ızgarasıdır.
 
 - **Kalıcı kart:** ızgaranın üstündeki şeritte, büyük **Ekonomi** kartı.
-  - **Ekonomi:** ~~seviye n'nin bedeli 400 × n~~ → bir üst seviyenin bedeli o anki tur gelirinin yarısı (◉500, ◉575, ◉650 …), her seviye tur başına +150 altın getirir ✅.
+  - **Ekonomi:** ~~seviye n'nin bedeli 400 × n~~ → ~~tur gelirinin yarısı, seviye başına +150~~ ("artış çok az, savaşlar kısır") → harcanan kadar fazla gelir: gelir 1.000 × 1,5^seviye (1.000, 1.500, 2.250, 3.375 …), bedel aradaki fark (◉500, ◉750, ◉1.125 …) ✅.
 - **Asker kartları:** throneofcurse'teki 39 sınıfın hepsi kart olur, **4 satır × 10 sütun** ✅. Kalan 40. yuvada **Hazır** düğmesi durur.
   - Kartlar aileye göre dizilir: kılıçlı, mızraklı, okçu, atlı. Aile içinde soldan sağa malzeme ve güç artar.
   - Her ailenin başında küçük bir **Talim** düğmesi olur (aşağıya bak).

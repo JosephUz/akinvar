@@ -13,17 +13,17 @@ test('tur başı gelir, kart al ve geri ver tam iade', () => {
   assert.ok(!refundUnit(m, me, c.index), 'almadığını geri veremez');
 });
 
-test('ekonomi ve geliştirme bedeli tur gelirinin yarısı, her ekonomi seviyesi tur başına +150', () => {
+test('ekonomi: harcanan kadar fazla gelir (1.000 → 1.500 → 2.250); geliştirme tur gelirinin yarısı', () => {
   const m = createMatch({ seed: 2 }), me = m.players[0];
-  assert.equal(ecoCost(0), 500); assert.equal(ecoCost(1), 575); assert.equal(ecoCost(2), 650);
-  assert.ok(buyEco(m, me)); assert.equal(me.gold, 500); assert.equal(income(me), 1150);
+  assert.equal(ecoCost(0), 500); assert.equal(ecoCost(1), 750); assert.equal(ecoCost(2), 1125);
+  assert.ok(buyEco(m, me)); assert.equal(me.gold, 500); assert.equal(income(me), 1500);
   assert.ok(refundEco(m, me)); assert.equal(me.gold, 1000);
   assert.equal(talimCost(me), 500);
   assert.ok(buyTalim(m, me, 2)); assert.equal(me.talim[2], 1); assert.equal(me.gold, 500);
   assert.ok(buyTalim(m, me, 2)); assert.equal(me.gold, 0); // ikinci seviye de aynı bedel
   assert.ok(refundTalim(m, me, 2)); assert.ok(refundTalim(m, me, 2)); assert.equal(me.gold, 1000);
-  me.gold = 2000; assert.ok(buyEco(m, me)); assert.equal(talimCost(me), 575); // tur 1.150 → geliştirme 575
-  assert.ok(buyTalim(m, me, CLASSES.length - 1)); assert.equal(me.gold, 2000 - 500 - 575);
+  me.gold = 2000; assert.ok(buyEco(m, me)); assert.equal(talimCost(me), 750); // tur 1.500 → geliştirme 750
+  assert.ok(buyTalim(m, me, CLASSES.length - 1)); assert.equal(me.gold, 2000 - 500 - 750);
   assert.ok(refundEco(m, me)); assert.ok(refundTalim(m, me, CLASSES.length - 1)); assert.equal(me.gold, 2000); // ödenen aynen döner
 });
 

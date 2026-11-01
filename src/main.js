@@ -6,7 +6,7 @@ import { step, command, visibleTo, createBattle, applySnapshot, PER_BOLUK } from
 import { CLASSES, FAMILIES, HIT, CLASS_COUNT } from './units.js';
 import {
   createMatch, startBattle, startFlags, endRound, buyUnit, refundUnit, buyEco, refundEco, buyTalim, refundTalim,
-  setReady, ecoCost, talimCost, talimPaid, income, battleLosses, saveMatch, loadMatch,
+  setReady, ecoCost, talimCost, talimPaid, income, incomeAt, battleLosses, saveMatch, loadMatch,
 } from './match.js';
 import { View } from './view.js';
 import { sunucuBaglanti } from './ag.js';
@@ -254,7 +254,7 @@ function renderPrep() {
   $('prep-gold').textContent = num(me.gold);
   $('prep-income').textContent = t('hazirlik.gelir', { n: num(income(me)) });
   const eco = ecoCost(me.eco);
-  $('eco').innerHTML = `<img src="${ICON('GOLD')}" alt=""><div><span class="fam">${t('eko.seviye', { n: me.eco })}</span><b>${t('eko.gelir', { a: num(income(me)), b: num(income(me) + ECONOMY.levelIncome) })}</b></div><span class="price">◉ ${num(eco)}</span>${me.bought.eco ? `<span class="badge">+${me.bought.eco}</span>` : ''}`;
+  $('eco').innerHTML = `<img src="${ICON('GOLD')}" alt=""><div><span class="fam">${t('eko.seviye', { n: me.eco })}</span><b>${t('eko.gelir', { a: num(income(me)), b: num(incomeAt(me.eco + 1)) })}</b></div><span class="price">◉ ${num(eco)}</span>${me.bought.eco ? `<span class="badge">+${me.bought.eco}</span>` : ''}`;
   $('eco').classList.toggle('poor', me.gold < eco);
   const counts = new Map();
   for (const u of me.units) counts.set(u, (counts.get(u) ?? 0) + 1);

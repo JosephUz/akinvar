@@ -244,6 +244,6 @@ export default {
   'yardim.s10': '<kbd>TEKERLEK</kbd> Yaklaştır / uzaklaştır',
   'yardim.s11': '<kbd>Q / E</kbd> Kamerayı çevir · <kbd>F</kbd> ordunun ortası',
   'yardim.s12': '<kbd>P</kbd> Duraklat (tek başına) · <kbd>ESC</kbd> seçimi bırak, menü',
-  'yardim.kurallar': 'Her tur ◉ 1.000 ve ekonomi seviyesi başına ◉ 150 gelir. Emir vermediğin bölükler botlar gibi ilerler ve gördükleri düşmana saldırır; emir verdiğin bölük sözünü dinler, Dur dersen yerinde bekler. Savaşta sis vardır, 30 saniye sonra alan daralır. Savaşta ölen her asker kendi bayrağından bir can götürür, turu kazansan da kaybetsen de. Turu kazanan takımın sağ kalanları 20 saniye içinde rakip bayraklara gönderilir; her asker o bayraktan bir can götürür. Bayrağı düşen elenir.',
+  'yardim.kurallar': 'Her tur ◉ 1.000 gelir; ekonomiye ne harcarsan sonraki turlarda gelirin o kadar artar (◉ 500 → ◉ 1.500, ◉ 750 daha → ◉ 2.250). Emir vermediğin bölükler botlar gibi ilerler ve gördükleri düşmana saldırır; emir verdiğin bölük sözünü dinler, Dur dersen yerinde bekler. Savaşta sis vardır, 30 saniye sonra alan daralır. Savaşta ölen her asker kendi bayrağından bir can götürür, turu kazansan da kaybetsen de. Turu kazanan takımın sağ kalanları 20 saniye içinde rakip bayraklara gönderilir; her asker o bayraktan bir can götürür. Bayrağı düşen elenir.',
   'yardim.anladim': 'ANLADIM',
 };

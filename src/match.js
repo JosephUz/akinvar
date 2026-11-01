@@ -7,9 +7,11 @@ import { CLASSES, CLASS_COUNT, HIT, FAMILIES } from './units.js';
 const zeros = () => new Array(CLASS_COUNT).fill(0); // sınıf başına geliştirme seviyesi
 import { createBattle, startFlagPhase, mulberry32, command, PER_BOLUK, snapshot, applySnapshot } from './sim.js';
 
-/** Bir üst ekonomi seviyesinin bedeli: o seviyedeyken alınan tur gelirinin yarısı (0 → ◉500, 1 → ◉575, 2 → ◉650). */
-export const ecoCost = (level) => Math.round((ECONOMY.roundIncome + level * ECONOMY.levelIncome) * ECONOMY.costShare);
-export const income = (p) => ECONOMY.roundIncome + p.eco * ECONOMY.levelIncome;
+/** Ekonomi seviyesindeki tur geliri: 1.000 × 1,5^seviye (1.000, 1.500, 2.250, 3.375 …). */
+export const incomeAt = (level) => Math.round(ECONOMY.roundIncome * ECONOMY.growth ** level);
+/** Bir üst seviyenin bedeli = gelir artışı: ne harcanırsa sonraki turlarda o kadar fazla gelir (◉500, ◉750, ◉1.125 …). */
+export const ecoCost = (level) => incomeAt(level + 1) - incomeAt(level);
+export const income = (p) => incomeAt(p.eco);
 /** Geliştir bedeli her sınıfta ve her seviyede aynı: oyuncunun o anki tur gelirinin yarısı (ekonomi büyüdükçe artar). */
 export const talimCost = (p) => Math.round(income(p) * TALIM.share);
 

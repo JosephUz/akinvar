@@ -81,7 +81,7 @@ Hazırlık ekranı alt bant değil, ekranı dolduran bir kart ızgarasıdır.
 - Araç çubuğu ve Esc menüsü bizim standardımıza göre olur, F1 kontroller.
 - Dokunmatik: sonra bakılacak ✅. Çayır'ın kahraman odaklı dokunmatik düzeni buraya uymaz.
 
-### 3. Bayrak evresi (10 sn) ✅
+### 3. Bayrak evresi (20 sn) ✅
 
 - **Ölen asker de can götürür (2026-10-31, Yusuf):** savaşta ölen her asker **kendi** sahibinin bayrağından −1 götürür; turu kazanan da kaybeden de, alan dışında ölen de sayılır. Savaş sırasında üstteki bayrak canları canlı düşer. Canı biten oyuncu bayrak evresine kalmadan elenir. Sağ kalanlar aşağıdaki gibi **seçilen rakip** bayraktan götürür.
   - Bot maçları ölçümü (2v2): 100 can her maçta 1 turda biter; 1.000 can 7–15 tur; 10.000 can 55–122 tur.
@@ -92,7 +92,7 @@ Hazırlık ekranı alt bant değil, ekranı dolduran bir kart ızgarasıdır.
   - her vuruşta bayrağın üstünden **−1** çıkar,
   - vuran asker haritadan kaybolur.
 - Herkes istediği bayrağa yüklenebilir. Takım bir oyuncuya odaklanıp onu eleyebilir ya da hasarı dağıtıp birkaç oyuncuyu birden eleyebilir.
-- **10 sn geri sayım.** Süre içinde bayrağa gönderilmeyen askerler dağılır, can götürmez. Bütün askerler harcanınca evre erken biter.
+- **20 sn geri sayım.** Süre içinde bayrağa gönderilmeyen askerler dağılır, can götürmez. Bütün askerler harcanınca evre erken biter.
 - Ölmüş bayrak seçilemez. Yoldayken hedefi ölen asker boşa gider ✅. Bu fazla yüklenmenin bedeli olur.
 - Botlar hedefi kişiliğine göre seçer: Akıncı en düşük canı bitirmeye gider, Karşı kurucu en güçlü ekonomiyi hedefler.
 - Askerler sonraki tura geçmez. Her tur ordu sıfırdan kurulur. Turdan tura yalnız ekonomi, talim ve birikmiş para taşınır.

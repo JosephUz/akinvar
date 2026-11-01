@@ -173,7 +173,7 @@ export default {
   'bayrak.goz': 'BAYRAK EVRESİ',
   'bayrak.kazandin': 'Saha senin. Bayraklara yüklen.',
   'bayrak.kaybettin': 'Saha düştü. Bayraklarına koşuyorlar.',
-  'bayrak.ipucu': 'Bütün askerlerin seçili: rakip bayrağa sağ tıkla. Bir kısmını göndermek için seçimi daralt. 10 saniyede gönderilmeyen dağılır.',
+  'bayrak.ipucu': 'Bütün askerlerin seçili: rakip bayrağa sağ tıkla. Bir kısmını göndermek için seçimi daralt. 20 saniyede gönderilmeyen dağılır.',
   'bayrak.izle': 'Her asker bayraktan bir can götürür.',
   'tur.elendi': '(elendi)',
   'tur.berabere': 'Berabere: iki ordu da yok oldu.',
@@ -231,6 +231,6 @@ export default {
   'yardim.s10': '<kbd>TEKERLEK</kbd> Yaklaştır / uzaklaştır',
   'yardim.s11': '<kbd>Q / E</kbd> Kamerayı çevir · <kbd>F</kbd> ordunun ortası',
   'yardim.s12': '<kbd>P</kbd> Duraklat (tek başına) · <kbd>ESC</kbd> seçimi bırak, menü',
-  'yardim.kurallar': 'Her tur ◉ 1.000 ve ekonomi seviyesi başına ◉ 150 gelir. Emir vermediğin bölükler botlar gibi ilerler ve gördükleri düşmana saldırır; emir verdiğin bölük sözünü dinler, Dur dersen yerinde bekler. Savaşta sis vardır, 30 saniye sonra alan daralır. Savaşta ölen her asker kendi bayrağından bir can götürür, turu kazansan da kaybetsen de. Turu kazanan takımın sağ kalanları 10 saniye içinde rakip bayraklara gönderilir; her asker o bayraktan bir can götürür. Bayrağı düşen elenir.',
+  'yardim.kurallar': 'Her tur ◉ 1.000 ve ekonomi seviyesi başına ◉ 150 gelir. Emir vermediğin bölükler botlar gibi ilerler ve gördükleri düşmana saldırır; emir verdiğin bölük sözünü dinler, Dur dersen yerinde bekler. Savaşta sis vardır, 30 saniye sonra alan daralır. Savaşta ölen her asker kendi bayrağından bir can götürür, turu kazansan da kaybetsen de. Turu kazanan takımın sağ kalanları 20 saniye içinde rakip bayraklara gönderilir; her asker o bayraktan bir can götürür. Bayrağı düşen elenir.',
   'yardim.anladim': 'ANLADIM',
 };

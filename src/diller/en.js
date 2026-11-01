@@ -165,7 +165,7 @@ export default {
   'bayrak.goz': 'FLAG PHASE',
   'bayrak.kazandin': 'The field is yours. Charge the flags.',
   'bayrak.kaybettin': 'The field has fallen. They are running for your flags.',
-  'bayrak.ipucu': 'All your soldiers are selected: right click an enemy flag. Narrow the selection to send only some. Anyone not sent in 10 seconds disperses.',
+  'bayrak.ipucu': 'All your soldiers are selected: right click an enemy flag. Narrow the selection to send only some. Anyone not sent in 20 seconds disperses.',
   'bayrak.izle': 'Each soldier takes one health from the flag.',
   'tur.elendi': '(out)',
   'tur.berabere': 'Draw: both armies were wiped out.',
@@ -220,6 +220,6 @@ export default {
   'yardim.s10': '<kbd>WHEEL</kbd> Zoom in / out',
   'yardim.s11': '<kbd>Q / E</kbd> Rotate the camera · <kbd>F</kbd> center on your army',
   'yardim.s12': '<kbd>P</kbd> Pause (single player) · <kbd>ESC</kbd> clear selection, menu',
-  'yardim.kurallar': 'Every round you get ◉ 1,000 plus ◉ 150 per economy level. Companies without orders advance like bots and attack any enemy they see; a company you order follows you, and Hold keeps it in place. There is fog in battle, and the ring starts closing after 30 seconds. Every soldier who dies in battle costs its own flag one health, whether you win the round or not. The winning team sends its survivors to the enemy flags within 10 seconds; each soldier takes one health from that flag. A player whose flag falls is out.',
+  'yardim.kurallar': 'Every round you get ◉ 1,000 plus ◉ 150 per economy level. Companies without orders advance like bots and attack any enemy they see; a company you order follows you, and Hold keeps it in place. There is fog in battle, and the ring starts closing after 30 seconds. Every soldier who dies in battle costs its own flag one health, whether you win the round or not. The winning team sends its survivors to the enemy flags within 20 seconds; each soldier takes one health from that flag. A player whose flag falls is out.',
   'yardim.anladim': 'GOT IT',
 };

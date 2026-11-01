@@ -1,12 +1,14 @@
 // Çevrim içi bağlantı: tek WebSocket hem açık oda listesini hem bekleme odasını hem maçı taşır.
 // Sunucu ikili çerçevelerle savaşın tam durumunu (anlık) yollar; bunlar { t: 'anlik', veri } olarak sıraya girer.
 import { SERVER } from './config.js';
+import { isApp } from './platform.js';
 
-/** Sunucu adresi: sayfa sunucunun kendisinden açıldıysa (yerelde) aynı adres, yoksa config.js → SERVER. ?sunucu= ile değişir. */
+/** Sunucu adresi: sayfa sunucunun kendisinden açıldıysa (yerelde) aynı adres, yoksa config.js → SERVER. ?sunucu= ile değişir.
+ * Android uygulamasında sayfa https://localhost'tan açılır ama sunucu orada değildir: hep SERVER. */
 export function sunucuAdresi() {
   const p = new URLSearchParams(location.search).get('sunucu');
   if (p) return p;
-  const h = location.hostname, kendi = h === SERVER || h === 'localhost' || /^[\d.]+$|^\[/.test(h);
+  const h = location.hostname, kendi = !isApp() && (h === SERVER || h === 'localhost' || /^[\d.]+$|^\[/.test(h));
   return kendi ? `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}` : 'wss://' + SERVER;
 }
 

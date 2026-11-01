@@ -210,3 +210,75 @@ dialog::backdrop{background:#102017a8;backdrop-filter:blur(4px)}
 @media(max-height:800px){.card .side{gap:2px;padding-top:0}.card .items img{width:1.05em;height:1.05em}.card .stats{font-size:.6em;line-height:1.05}.card .up{font-size:.62em}.prep-hint{display:none}}
 @media(max-width:1250px){#cards{grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:none;grid-auto-rows:minmax(170px,auto);overflow-y:auto}#prep-team{display:none}.eco-card{min-width:0}}
 @media(max-width:900px){#flag-banner{right:12px;left:12px;bottom:auto;top:110px;max-width:none}.brand small{display:none}#cards{grid-template-columns:repeat(4,minmax(0,1fr))}.prep-head{flex-wrap:wrap}#orders{min-width:0;right:12px;left:12px;bottom:12px}.hint{display:none}.site-name{display:none}#koltuklar,.b-ayar{grid-template-columns:1fr}.cevrim-dugmeler{grid-template-columns:1fr}}
+
+/* ---------- dokunmatik ve telefon (Çayır Muhafızı düzeni) ---------- */
+/* Dokunmatik: html.touch (platform.js). Görünür alan kilidi: html.vv (gorunur-alan.js). Çentik / sistem çubuğu payı: env(safe-area-inset-*). */
+html:not(.touch) .touch-only{display:none!important}
+html.touch .desktop-only{display:none!important}
+html.touch,html.touch body{overscroll-behavior:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+html.touch input{-webkit-user-select:text;user-select:text}
+html.vv #app{top:var(--vv-top);left:var(--vv-left);right:auto;bottom:auto;width:var(--vv-w);height:var(--vv-h)}
+html.touch #help kbd{display:none}
+html.touch .order-buttons button,html.touch #filtre button,html.touch .top-actions .subtle,html.touch .dk{min-height:44px}
+html.touch .top-actions .subtle{min-width:44px;display:inline-flex;align-items:center;justify-content:center}
+html.touch #unit-tags .tag img{width:calc(32px * var(--s));height:calc(32px * var(--s))}
+html.touch .card:hover{background:linear-gradient(#25392dee,#1a2b21f2);border-color:#71826455}
+#cevir{display:none}
+@media(orientation:portrait){html.touch #cevir{position:fixed;inset:0;z-index:99;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#142219f7;font:1.3em Georgia,serif;text-align:center;padding:24px}
+  html.touch #cevir span{font:3em system-ui;color:var(--gold);animation:cevir 1.6s ease-in-out infinite}}
+@keyframes cevir{50%{transform:rotate(90deg)}}
+
+/* yatay telefon ve alçak pencere */
+@media(max-height:560px){
+  #header{padding:8px max(12px,env(safe-area-inset-right)) 0 max(12px,env(safe-area-inset-left));gap:8px}
+  .brand{font-size:1em;letter-spacing:2px;gap:8px}.brand svg{width:24px;height:24px}.brand small{display:none}
+  body.playing .brand{display:none}
+  .subtle{padding:.4em .7em}
+  /* ana ekran: solda tek başına, sağda çevrim içi */
+  .home-copy{margin:0 0 0 max(16px,env(safe-area-inset-left));padding:52px 0 12px;width:min(920px,calc(100% - 32px - env(safe-area-inset-left) - env(safe-area-inset-right)));display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:6px 16px;align-items:start}
+  .home-copy>.eyebrow{display:none}
+  .home-copy h1{grid-column:1;font-size:24px;letter-spacing:-.5px;margin:0}
+  .home-copy .ad-alan,.home-copy .tek{grid-column:1;margin:0}
+  .ad-alan input{padding:.45em .7em}
+  #cevrim{grid-column:2;grid-row:1/span 3;margin-top:0;padding:10px}
+  .tek{padding:8px;gap:6px}.opts button{padding:.3em .55em}.opts small{font-size:.66em}
+  .tek #play,.tek #devam{min-width:0;align-self:stretch;padding:.7em 1em}
+  #home{background:linear-gradient(90deg,#14291ff4 0%,#152a21ee 60%,#172c21b0 100%)}
+  footer{display:none}
+  /* hazırlık: kartlar kayan ızgarada */
+  #prep{padding:50px max(10px,env(safe-area-inset-right)) max(6px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));gap:6px}
+  .prep-head{gap:10px;flex-wrap:nowrap}
+  .prep-title .eyebrow{font-size:.62em}.prep-title h2{font-size:1.15em}
+  .eco-card{min-width:0;padding:.25em .6em;gap:6px}.eco-card img{width:1.7em;height:1.7em}.eco-card b{font-size:.85em}
+  .gold img{width:1.6em;height:1.6em}.gold b{font-size:1.4em}
+  .timer b{font-size:1.25em}
+  #prep-team{display:none}
+  #filtre{gap:4px}#filtre button{padding:.2em .7em}
+  #cards{grid-template-columns:repeat(auto-fill,minmax(118px,1fr));grid-template-rows:none;grid-auto-rows:118px;overflow-y:auto;gap:6px;overscroll-behavior:contain}
+  #info{min-height:0;max-height:2.4em;overflow:hidden;flex-wrap:nowrap;font-size:.72em;padding:2px 8px}
+  .prep-hint{display:none}
+  /* savaş: emir paneli sol altta dar, bayrak yazısı sağ altta */
+  #hud{top:6px;gap:2px}.score{padding:2px 10px;gap:8px}.score b{font-size:1.15em;min-width:2.4em}
+  .sub{font-size:.75em}.chip{font-size:.7em;padding:2px 6px}
+  #orders{left:max(8px,env(safe-area-inset-left));right:auto;bottom:max(8px,env(safe-area-inset-bottom));min-width:0;max-width:min(480px,60vw);padding:6px 8px}
+  #sel-info{font-size:.85em}
+  .order-buttons{flex-wrap:wrap;margin:6px 0 0;gap:5px}.order-buttons button{padding:.35em .7em}
+  #deck{flex-wrap:nowrap;overflow-x:auto;gap:8px;margin:4px 0 4px;padding-top:12px}
+  .dk{width:62px;flex:none}.dk .soldier{height:36px;margin-top:12px}
+  .hint{display:none}
+  #flag-banner{left:auto;top:auto;right:max(8px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));max-width:38vw;padding:8px 12px}
+  #flag-banner h3{font-size:1.1em}#flag-banner p{font-size:.75em}
+  #toast{top:64px;font-size:.8em}
+  .dialog-inner{padding:18px 20px}.dialog-inner h2{font-size:1.6em;margin:6px 0 10px}
+  .menu-stack{margin-top:10px}
+}
+html.touch #help>span{display:none}html.touch #help::before{content:'?';font-weight:700}
+@media(max-height:560px){
+  body.playing #header{justify-content:flex-end}
+  #prep{padding-top:58px}
+  .home-copy{padding-top:56px;gap:4px 16px}.home-copy h1{font-size:21px}
+  .ad-alan .eyebrow{display:none}
+  .opts small{display:none}.secim{gap:3px}.tek{gap:5px}
+}
+html.app a[href*="josephuz.com"]{display:none!important}
+html.touch kbd{display:none}

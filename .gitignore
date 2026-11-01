@@ -7,3 +7,4 @@ sunucu*.log
 !.env.example
 .wrangler/
 artifacts/
+apk/

@@ -96,11 +96,15 @@
       <button id="stop" data-i18n-title="emir.durTitle" title="Dur, yerinde bekle (Boşluk)" data-i18n="emir.dur">Dur</button>
       <button id="pause" title="(P)">Ⅱ</button>
       <button id="speed" data-i18n-title="emir.hiz" title="Hız">1×</button>
+      <button id="t-birak" class="touch-only" data-i18n="emir.birak">Bırak</button>
+      <button id="t-coklu" class="touch-only" data-i18n="emir.coklu">Çoklu</button>
+      <button id="t-ordu" class="touch-only" data-i18n="emir.ordum">Ordum</button>
     </div>
     <small class="hint" data-i18n-html="emir.ipucu"></small>
   </div>
 
   <div id="toast" role="status" hidden></div>
+  <div id="cevir" aria-live="polite"><span>⟳</span><b data-i18n="cevir.yazi">Telefonu yan çevir</b></div>
 
   <aside id="perf" class="panel" hidden>
     <span class="eyebrow" data-i18n="perf.goz">BAŞARIM · F3</span>
@@ -116,14 +120,28 @@
 
   <dialog id="help-dialog"><div class="dialog-inner"><button class="close" data-close data-i18n-aria-label="yardim.kapat" aria-label="Kapat">×</button><span class="eyebrow" data-i18n="yardim.goz">KÜÇÜK BİR KOMUTAN REHBERİ</span><h2 data-i18n="yardim.baslik">Ordun, senin kararın.</h2>
     <p class="controls-title" data-i18n="yardim.hazirlik">HAZIRLIK</p>
-    <div class="controls">
+    <div class="controls touch-only">
+      <div data-i18n-html="yardim.th1"></div>
+      <div data-i18n-html="yardim.th2"></div>
+      <div data-i18n-html="yardim.h3"></div>
+    </div>
+    <div class="controls desktop-only">
       <div data-i18n-html="yardim.h1"></div>
       <div data-i18n-html="yardim.h2"></div>
       <div data-i18n-html="yardim.h3"></div>
       <div data-i18n-html="yardim.h4"></div>
     </div>
     <p class="controls-title" data-i18n="yardim.savas">SAVAŞ</p>
-    <div class="controls">
+    <div class="controls touch-only">
+      <div data-i18n-html="yardim.d1"></div>
+      <div data-i18n-html="yardim.d2"></div>
+      <div data-i18n-html="yardim.d3"></div>
+      <div data-i18n-html="yardim.d4"></div>
+      <div data-i18n-html="yardim.d5"></div>
+      <div data-i18n-html="yardim.d6"></div>
+      <div data-i18n-html="yardim.d7"></div>
+    </div>
+    <div class="controls desktop-only">
       <div data-i18n-html="yardim.s1"></div>
       <div data-i18n-html="yardim.s2"></div>
       <div data-i18n-html="yardim.s3"></div>

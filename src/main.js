@@ -12,6 +12,8 @@ import { View } from './view.js';
 import { sunucuBaglanti } from './ag.js';
 import { kodDuzelt, kodYeterli } from './kod.js';
 import { t, DIL, sayi, dilUygula, dilDugmesi } from './dil.js';
+import { touchDevice, enterFullscreen, onBackButton, isApp } from './platform.js';
+import { gorunurAlanaKilitle } from './gorunur-alan.js';
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -50,8 +52,14 @@ function measure(src) {
 }
 for (const src of new Set(CLASSES.map(IMG))) measure(src);
 
-const view = new View($('scene'));
-view.setShadows(params.get('golge') !== '0');
+// Dokunmatikte (telefon) hafif görüntü: kenar yumuşatma ve gölge kapalı başlar (gölge F3 panelinden açılır).
+const touch = touchDevice();
+document.documentElement.classList.toggle('touch', touch);
+// Android uygulamasında siteye giden bağlantılar gizli: WebView oyundan çıkıp siteye giderdi.
+document.documentElement.classList.toggle('app', isApp());
+gorunurAlanaKilitle();
+const view = new View($('scene'), { light: touch });
+view.setShadows(params.has('golge') ? params.get('golge') !== '0' : !touch);
 let m = null, w = null, me = null, myIdx = -1, acc = 0, last = performance.now(), speed = 1, paused = false;
 let state = 'menu', selected = new Set(), prepLeft = 0, online = false;
 const secim = {
@@ -77,6 +85,7 @@ function menuBattle() {
 }
 
 function enterGame() {
+  if (touch) enterFullscreen();
   paused = false; speed = 1; syncButtons();
   document.body.classList.add('playing');
   $('home').hidden = true; $('bekleme').hidden = true; $('hud').hidden = false;
@@ -175,7 +184,7 @@ function showFlags() {
   $('flag-labels').innerHTML = w.flags.map((f, k) => `<div class="flag-label" data-flag="${k}"><b>${esc(oyuncuAdi(m.players[f.player]))}</b><span></span></div>`).join('');
   $('flag-banner').hidden = false;
   $('flag-title').textContent = t(w.winner === me.team ? 'bayrak.kazandin' : 'bayrak.kaybettin');
-  $('flag-hint').textContent = t(winnerMe ? 'bayrak.ipucu' : 'bayrak.izle');
+  $('flag-hint').textContent = t(winnerMe ? (touch ? 'bayrak.ipucuDokun' : 'bayrak.ipucu') : 'bayrak.izle');
   $('orders').hidden = !winnerMe;
 }
 
@@ -282,7 +291,7 @@ function renderPrep() {
 }
 
 function showInfo(c) {
-  if (!c) { $('info').innerHTML = `<span class="muted">${t('bilgi.bos')}</span>`; return; }
+  if (!c) { $('info').innerHTML = `<span class="muted">${t(touch ? 'bilgi.bosDokun' : 'bilgi.bos')}</span>`; return; }
   const strong = EDGE[c.index].filter((x) => x.s > 0).slice(0, 3), weak = EDGE[c.index].filter((x) => x.s < 0).slice(-3).reverse();
   const chip = (x) => `<span class="mini"><img src="${IMG(x.d)}" alt="">${sinifAdi(x.d)}${x.d.skey || x.d.akey ? ' · ' + sinifDetay(x.d) : ''}</span>`;
   const mats = MAT.filter(([k]) => c.materials[k]).map(([k, icon]) => `<span class="mat"><img src="${ICON(icon)}" alt="">${c.materials[k]} ${t('mal.' + k)}</span>`).join('') || `<span class="muted">${t('bilgi.esyasiz')}</span>`;
@@ -324,8 +333,27 @@ function prepClick(e, refund) {
   if (up) { act('talim', +up.dataset.up, up, refund); return; }
   if (card) act('al', +card.dataset.cls, card, refund);
 }
-$('prep').addEventListener('click', (e) => prepClick(e, false));
-$('prep').addEventListener('contextmenu', (e) => { e.preventDefault(); prepClick(e, true); });
+// Dokunmatikte sağ tık yok: karta (ya da ⬆ / ekonomiye) basılı tutmak geri verir; dokunuş bilgi şeridini de gösterir.
+let prepHold = null, prepPointer = 'mouse';
+$('prep').addEventListener('pointerdown', (e) => {
+  prepPointer = e.pointerType;
+  if (e.pointerType !== 'touch') return;
+  const card = e.target.closest('[data-cls]');
+  if (card) showInfo(CLASSES[+card.dataset.cls]);
+  if (!e.target.closest('[data-cls], [data-up], #eco') || e.target.closest('#ready')) return;
+  const hold = { x: e.clientX, y: e.clientY, target: e.target, done: false };
+  hold.timer = setTimeout(() => { hold.done = true; navigator.vibrate?.(15); prepClick({ target: hold.target }, true); }, 500);
+  prepHold = hold;
+});
+$('prep').addEventListener('pointermove', (e) => {
+  if (prepHold && !prepHold.done && Math.hypot(e.clientX - prepHold.x, e.clientY - prepHold.y) > 10) { clearTimeout(prepHold.timer); prepHold = null; }
+});
+for (const ev of ['pointerup', 'pointercancel']) $('prep').addEventListener(ev, () => { if (prepHold) clearTimeout(prepHold.timer); });
+$('prep').addEventListener('click', (e) => {
+  const held = prepHold?.done; prepHold = null;
+  if (!held) prepClick(e, false); // basılı tutup geri verdikten sonra gelen tıklama alım sayılmaz
+});
+$('prep').addEventListener('contextmenu', (e) => { e.preventDefault(); if (prepPointer !== 'touch') prepClick(e, true); });
 $('prep').addEventListener('mouseover', (e) => { const card = e.target.closest('[data-cls]'); showInfo(card ? CLASSES[+card.dataset.cls] : null); });
 
 // ---------- seçim ve emir ----------
@@ -450,7 +478,7 @@ const scene = $('scene'), box = $('selbox');
 let press = null, panDrag = null, lastClick = { t: 0, b: -1 };
 const canCommand = () => (state === 'battle' || state === 'flag') && !me.out && !(state === 'flag' && w.winner !== me.team);
 scene.addEventListener('pointerdown', (e) => {
-  if (state === 'menu' || state === 'prep') return;
+  if (e.pointerType === 'touch' || state === 'menu' || state === 'prep') return; // dokunuş: aşağıda
   scene.setPointerCapture(e.pointerId);
   if (e.button === 1) { panDrag = { x: e.clientX, y: e.clientY }; e.preventDefault(); return; }
   if (e.button === 0) press = { x: e.clientX, y: e.clientY, box: false };
@@ -463,6 +491,7 @@ scene.addEventListener('pointerdown', (e) => {
   }
 });
 scene.addEventListener('pointermove', (e) => {
+  if (e.pointerType === 'touch') return;
   if (panDrag) {
     const a = view.groundAt(panDrag.x, panDrag.y), b = view.groundAt(e.clientX, e.clientY);
     if (a && b) view.target.sub(b.sub(a));
@@ -477,6 +506,7 @@ scene.addEventListener('pointermove', (e) => {
   }
 });
 scene.addEventListener('pointerup', (e) => {
+  if (e.pointerType === 'touch') return;
   if (panDrag && e.button === 1) { panDrag = null; return; }
   if (!press || e.button !== 0) return;
   const add = e.shiftKey || e.ctrlKey;
@@ -505,6 +535,112 @@ scene.addEventListener('pointerup', (e) => {
   press = null; box.hidden = true;
 });
 scene.addEventListener('contextmenu', (e) => e.preventDefault());
+
+// ---------- dokunmatik ----------
+// Tek parmak: sürükle = kamerayı kaydır · dokun = seç / emir (seçiliyken zemine yürü, düşmana saldır; bayrak evresinde
+// bayrağa gönder) · basılı tut, sonra sürükle = kutu seçimi. İki parmak: kıstır = yakınlaştır, çevir = döndür, birlikte
+// kaydır = kamerayı kaydır. Bölük, sancağının ekrandaki yerine parmak payıyla (TOUCH.reach) seçilir.
+const TOUCH = { tapTime: 300, tapMove: 12, holdTime: 0.42, reach: 46, dbl: 380 };
+const fingers = new Map();
+let gesture = null, multiSelect = false, lastTap = { t: 0, b: -1 };
+
+/** Ekrandaki noktaya en yakın bölük (sancağına göre), parmak payı içinde. */
+function bolukAtScreen(x, y, pred) {
+  const c = centers();
+  let best = -1, bestD = TOUCH.reach * TOUCH.reach;
+  for (let b = 0; b < w.B; b++) {
+    if (!c.n[b] || !pred(b)) continue;
+    if (w.bteam[b] !== me.team && !visibleTo(w, me.team, c.cx[b], c.cz[b])) continue;
+    const s = view.toScreen(c.cx[b], c.cz[b]), d = (s.x - x) ** 2 + (s.y - y) ** 2;
+    if (d < bestD) { bestD = d; best = b; }
+  }
+  return best;
+}
+
+function touchTap(x, y) {
+  if (!canCommand()) return;
+  const p = view.groundAt(x, y);
+  if (state === 'flag') { if (p) flagOrder(p); return; }
+  const own = bolukAtScreen(x, y, mine);
+  if (own >= 0) {
+    const now = performance.now();
+    if (now - lastTap.t < TOUCH.dbl && lastTap.b === own) {
+      // Çift dokunuş: ekrandaki aynı sınıftan bölüklerin hepsi.
+      const cls = w.bcls[own];
+      selectWhere((o, c) => w.bcls[o] === cls && view.toScreen(c.cx[o], c.cz[o]).on, multiSelect);
+    } else if (multiSelect) { if (selected.has(own)) selected.delete(own); else selected.add(own); syncSelection(); }
+    else { selected = new Set([own]); syncSelection(); }
+    lastTap = { t: now, b: own };
+    return;
+  }
+  if (!selected.size || !p) return;
+  const foe = bolukAtScreen(x, y, (b) => w.bteam[b] !== me.team);
+  if (foe >= 0) { order({ type: 'attack', target: foe }); view.showMarker(w.cx[foe], w.cz[foe], true); }
+  else { order({ type: 'move', x: p.x, z: p.z }); view.showMarker(p.x, p.z, false); }
+}
+
+function twoFingers() {
+  const [a, b] = [...fingers.values()];
+  return { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, ang: Math.atan2(b.y - a.y, b.x - a.x), mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 };
+}
+
+scene.addEventListener('pointerdown', (e) => {
+  if (e.pointerType !== 'touch' || state === 'menu' || state === 'prep') return;
+  try { scene.setPointerCapture(e.pointerId); } catch { /* parmak çoktan kalktı */ }
+  fingers.set(e.pointerId, { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY, at: performance.now() });
+  if (fingers.size === 1) {
+    const id = e.pointerId;
+    gesture = { kind: 'wait', id, last: { x: e.clientX, y: e.clientY } };
+    gesture.hold = setTimeout(() => {
+      if (gesture?.kind !== 'wait' || gesture.id !== id || !canCommand() || state !== 'battle') return;
+      gesture.kind = 'box'; navigator.vibrate?.(15);
+      const f = fingers.get(id);
+      Object.assign(box.style, { left: f.x0 + 'px', top: f.y0 + 'px', width: '0px', height: '0px' }); box.hidden = false;
+    }, TOUCH.holdTime * 1000);
+  } else if (fingers.size === 2) {
+    clearTimeout(gesture?.hold); box.hidden = true;
+    const g = twoFingers();
+    gesture = { kind: 'two', d0: g.d, a0: g.ang, zoom0: view.zoom, angle0: view.angle, mid: { x: g.mx, y: g.my } };
+  }
+});
+scene.addEventListener('pointermove', (e) => {
+  const f = fingers.get(e.pointerId);
+  if (e.pointerType !== 'touch' || !f || !gesture) return;
+  f.x = e.clientX; f.y = e.clientY;
+  if (gesture.kind === 'wait' && Math.hypot(f.x - f.x0, f.y - f.y0) > TOUCH.tapMove) { clearTimeout(gesture.hold); gesture.kind = 'pan'; }
+  if (gesture.kind === 'pan') {
+    const a = view.groundAt(gesture.last.x, gesture.last.y), b = view.groundAt(f.x, f.y);
+    if (a && b) view.target.sub(b.sub(a));
+    gesture.last = { x: f.x, y: f.y };
+  } else if (gesture.kind === 'box') {
+    Object.assign(box.style, { left: Math.min(f.x0, f.x) + 'px', top: Math.min(f.y0, f.y) + 'px', width: Math.abs(f.x - f.x0) + 'px', height: Math.abs(f.y - f.y0) + 'px' });
+  } else if (gesture.kind === 'two' && fingers.size === 2) {
+    const g = twoFingers();
+    view.zoom = Math.min(w.radius * 1.3, Math.max(6, gesture.zoom0 * (gesture.d0 / g.d)));
+    view.angle = gesture.angle0 + (g.ang - gesture.a0);
+    view.resize();
+    const a = view.groundAt(gesture.mid.x, gesture.mid.y), b = view.groundAt(g.mx, g.my);
+    if (a && b) view.target.sub(b.sub(a));
+    gesture.mid = { x: g.mx, y: g.my };
+  }
+});
+function touchEnd(e) {
+  const f = fingers.get(e.pointerId);
+  if (e.pointerType !== 'touch' || !f) return;
+  fingers.delete(e.pointerId);
+  if (!gesture) return;
+  clearTimeout(gesture.hold);
+  if (gesture.kind === 'wait' && e.type === 'pointerup' && performance.now() - f.at < TOUCH.tapTime) touchTap(f.x, f.y);
+  else if (gesture.kind === 'box' && e.type === 'pointerup') {
+    const l = Math.min(f.x0, f.x), r = Math.max(f.x0, f.x), tp = Math.min(f.y0, f.y), btm = Math.max(f.y0, f.y);
+    if (r - l > 8 || btm - tp > 8) selectWhere((b, c) => { const s = view.toScreen(c.cx[b], c.cz[b]); return s.x >= l && s.x <= r && s.y >= tp && s.y <= btm; }, multiSelect);
+  }
+  box.hidden = true;
+  // İki parmaktan biri kalkınca kalan parmak yeni bir jest başlatmaz (yanlışlıkla emir ya da kaydırma olmasın).
+  gesture = fingers.size ? { kind: 'done' } : null;
+}
+scene.addEventListener('pointerup', touchEnd);
+scene.addEventListener('pointercancel', touchEnd);
 scene.addEventListener('wheel', (e) => {
   e.preventDefault();
   view.zoom = Math.min(w.radius * 1.3, Math.max(6, view.zoom * Math.exp(e.deltaY * 0.0012)));
@@ -863,6 +999,9 @@ $('pause').onclick = () => { paused = !paused; syncButtons(); };
 $('speed').onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 4 : 1; syncButtons(); };
 $('stop').onclick = () => order({ type: 'stop' });
 $('select-all').onclick = () => w && selectWhere(() => true);
+$('t-birak').onclick = () => { selected = new Set(); syncSelection(); };
+$('t-coklu').onclick = () => { multiSelect = !multiSelect; $('t-coklu').classList.toggle('secili', multiSelect); };
+$('t-ordu').onclick = () => w && focusArmy();
 $('help').onclick = () => $('help-dialog').showModal();
 $('menu-btn').onclick = () => state !== 'menu' && openMenu();
 $('resume').onclick = () => $('menu-dialog').close();
@@ -877,8 +1016,17 @@ $('shadows').onclick = () => { view.setShadows(!view.shadows); $('shadows').text
 for (const b of document.querySelectorAll('[data-close]')) b.onclick = () => b.closest('dialog').close();
 window.__akinCmd = {
   startSolo, beginBattle, selectAll: () => selectWhere(() => true), order, flagOrder, view, net,
-  get m() { return m; }, get w() { return w; }, get state() { return state; }, get me() { return me; }, get online() { return online; }, get oda() { return odaDurum; },
+  get m() { return m; }, get w() { return w; }, get sel() { return [...selected]; }, get state() { return state; }, get me() { return me; }, get online() { return online; }, get oda() { return odaDurum; },
 };
+
+// Android geri tuşu: açık pencereyi kapatır; oyunda menüyü açar; bekleme odasından çıkar; ana ekranda uygulamadan çıkar.
+onBackButton(({ exit }) => {
+  const open = document.querySelector('dialog[open]');
+  if (open) { open.close(); return; }
+  if (!$('bekleme').hidden) { odadanCik(); return; }
+  if (state === 'menu') { exit(); return; }
+  if (state !== 'over') openMenu();
+});
 
 dilUygula(); dilDugmesi($('dil'));
 showInfo(null); menuBattle(); syncButtons(); hud(); lobiYaz(); lobiBaglan(); devamYaz();

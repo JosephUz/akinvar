@@ -13,3 +13,7 @@ dist
 .wrangler
 wrangler.jsonc
 .env
+android
+apk
+store
+capacitor.config.json

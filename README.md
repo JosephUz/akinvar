@@ -23,6 +23,16 @@ Tarayıcıda Three.js ile çalışan, Total War esintili, tur tabanlı takım or
 
 - `npm test`: simülasyon testleri
 - `npm run olcum`: tarayıcısız simülasyon başarım ölçümü (2/5/10/20 bin asker)
+- `npm run test:dokunmatik`: yatay telefon (844×390) dokunmatik duman testi; sunucu açık olmalı (`ADRES=http://localhost:5240`)
+
+## Mobil
+
+Çayır Muhafızı'ndaki düzen: dokunmatik `(pointer: coarse)` ya da `?touch` ile anlaşılır (`src/platform.js`, kökte `html.touch`), telefonda hafif görüntü (kenar yumuşatma ve gölge kapalı), görünür alan kilidi (`src/gorunur-alan.js`), çentik payı `env(safe-area-inset-*)`, dik tutunca "yan çevir" uyarısı, ≤560 px yükseklikte sıkı düzen.
+
+- Hazırlık: dokun = al, basılı tut = geri ver (⬆ ve ekonomi de).
+- Savaş: sancağa dokun = seç (çift dokunuş aynı sınıf), seçiliyken zemine dokun = yürü, düşmana = saldır, bayrağa = yüklen; sürükle = kaydır; basılı tut + sürükle = kutu seçimi; iki parmak kıstır = yakınlaştır, çevir = döndür. Emir panelinde yalnız dokunmatikte Bırak · Çoklu · Ordum.
+
+**Android APK (Android Studio gerekmez):** JDK 21 ve Android SDK `%USERPROFILE%android` altında (başka yerdeyse `JAVA_HOME` / `ANDROID_HOME`). `npm run apk` oyunu `dist/`e toplar, Capacitor ile `android/`e kopyalar, Gradle ile derler: telefona kurulacak imzalı **`apk/AkinVar.apk`**, Play Store için `apk/AkinVar.aab`, incelemek için `apk/AkinVar-debug.apk` (konsolu `adb logcat`'e yazar). USB hata ayıklama açık telefona kurmak için `npm run apk -- --install`. Uygulama (`com.josephuz.akinvar`) oyunu kendi içinden açar, yatay ve tam ekrandır; çevrim içi odalar `akinvar-sunucu.josephuz.com`'a bağlanır; Android geri tuşu pencere / menü / odadan çık, ana ekranda uygulamadan çık. Yayın anahtarı `android/akinvar-release.jks`, şifresi `android/keystore.properties` (git'e girmez; **yedeklenmeli**, kaybolursa Play Store'da güncelleme yapılamaz). Simge ve açılış görseli `node scripts/icons.mjs`; Play Store görselleri `store/`.
 
 ## Durum
 

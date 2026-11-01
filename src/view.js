@@ -59,12 +59,13 @@ const WEAPON_TINT = { wo: [0.8, 0.62, 0.42], ir: [0.72, 0.75, 0.8], st: [1.3, 1.
 const FOG = [16, 26, 20, 165], OUT = [120, 34, 26, 125];
 
 export class View {
-  constructor(container) {
+  /** light: telefonda hafif görüntü (kenar yumuşatma yok, düşük piksel oranı). */
+  constructor(container, { light = false } = {}) {
     this.container = container;
     this.scene = new T.Scene();
     this.scene.background = new T.Color('#1f281c');
-    this.renderer = new T.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio, 1.6));
+    this.renderer = new T.WebGLRenderer({ antialias: !light, powerPreference: 'high-performance' });
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio, light ? 1.25 : 1.6));
     this.renderer.outputColorSpace = T.SRGBColorSpace;
     this.renderer.toneMapping = T.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.25;

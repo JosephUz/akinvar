@@ -12,9 +12,17 @@
     "build:web": "node scripts/build.mjs",
     "deploy:web": "node scripts/build.mjs && npx wrangler@4 deploy",
     "dil": "node scripts/dil-denetim.mjs",
-    "itch": "node scripts/itch.mjs"
+    "itch": "node scripts/itch.mjs",
+    "apk": "node scripts/apk.mjs",
+    "test:dokunmatik": "node tests/dokunmatik.mjs"
   },
   "dependencies": {
     "ws": "^8.22.1"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/cli": "^8.6.0",
+    "@capacitor/core": "^8.6.0"
   }
 }

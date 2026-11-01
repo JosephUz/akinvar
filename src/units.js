@@ -38,13 +38,13 @@ const ARMORS = {
 };
 
 // Fiyat (bir bölük, 20 asker) donanımın toplamı: asker + silah + kalkan + zırh + at (at, binicinin zırhıyla aynı katmandan zırhlı).
-// Böylece tek bir pahalı silah, bütün takımı giymiş askerden pahalı olamaz (ör. Türk yayı 170 < demir kılıç, demir kalkan, zincir, zincirli at 460).
+// Böylece tek bir pahalı silah, bütün takımı giymiş askerden pahalı olamaz (ör. Türk yayı 170 < demir kılıç, demir kalkan, zincir, zincirli at 410).
 export const PRICE = {
   soldier: 40,
   weapon: { ua: 0, 'sp:wo': 30, bo: 40, 'sp:ir': 60, 'sw:ir': 80, lb: 90, '2s:ir': 100, cb: 100, 'sp:st': 120, tb: 130, 'sw:st': 150, '2s:st': 180 },
   shield: { no: 0, 'sh:wo': 20, 'sh:ir': 50, 'sh:st': 90 },
   armor: { no: 0, le: 40, ch: 90, st: 160 },
-  horse: { no: 100, le: 140, ch: 200, st: 280 },
+  horse: { no: 50, le: 90, ch: 150, st: 230 },                  // at 50 + at zırhı (deri 40, zincir 100, çelik 180)
 };
 const priceOf = (p) => PRICE.soldier + PRICE.weapon[p.w] + PRICE.shield[p.sh] + PRICE.armor[p.armor] + (p.mounted ? PRICE.horse[p.armor] : 0);
 

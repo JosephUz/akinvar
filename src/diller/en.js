@@ -165,7 +165,7 @@ export default {
   'bayrak.goz': 'FLAG PHASE',
   'bayrak.kazandin': 'The field is yours. Charge the flags.',
   'bayrak.kaybettin': 'The field has fallen. They are running for your flags.',
-  'bayrak.ipucu': 'Select your soldiers and right click an enemy flag (no selection sends everyone). Anyone not sent in 10 seconds disperses.',
+  'bayrak.ipucu': 'All your soldiers are selected: right click an enemy flag. Narrow the selection to send only some. Anyone not sent in 10 seconds disperses.',
   'bayrak.izle': 'Each soldier takes one health from the flag.',
   'tur.elendi': '(out)',
   'tur.berabere': 'Draw: both armies were wiped out.',

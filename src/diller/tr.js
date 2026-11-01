@@ -173,7 +173,7 @@ export default {
   'bayrak.goz': 'BAYRAK EVRESİ',
   'bayrak.kazandin': 'Saha senin. Bayraklara yüklen.',
   'bayrak.kaybettin': 'Saha düştü. Bayraklarına koşuyorlar.',
-  'bayrak.ipucu': 'Askerlerini seç, rakip bayrağa sağ tıkla (seçim yoksa hepsi gider). 10 saniyede gönderilmeyen dağılır.',
+  'bayrak.ipucu': 'Bütün askerlerin seçili: rakip bayrağa sağ tıkla. Bir kısmını göndermek için seçimi daralt. 10 saniyede gönderilmeyen dağılır.',
   'bayrak.izle': 'Her asker bayraktan bir can götürür.',
   'tur.elendi': '(elendi)',
   'tur.berabere': 'Berabere: iki ordu da yok oldu.',

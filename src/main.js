@@ -125,7 +125,9 @@ function setupBattle() {
 function toFlags() {
   if (!online) startFlags(m);
   if (w.phase !== 'flag') { if (!online) roundOver(); return; }
-  state = 'flag'; selected = new Set(); syncSelection();
+  // Kazanan oyuncunun sağ kalan bütün bölükleri seçili gelir: tek tıkla hepsi bayrağa sürülür.
+  const winnerMe = w.winner === me.team && !me.out;
+  state = 'flag'; selected = new Set(winnerMe ? [...Array(w.B).keys()].filter((b) => mine(b) && w.balive[b]) : []); syncSelection();
   view.buildFlags(w.flags, w.flags.map((f) => m.players[f.player].color));
   // Kamera tepeye çıkar: bayraklar ve sağ kalanlar tek bakışta.
   const xs = w.flags.map((f) => f.x), zs = w.flags.map((f) => f.z);
@@ -134,7 +136,6 @@ function toFlags() {
   view.target.set((Math.min(...xs) + Math.max(...xs)) / 2, 0, (Math.min(...zs) + Math.max(...zs)) / 2);
   view.zoom = Math.max(18, Math.min(60, span * 0.6 + 8)); view.resize();
   $('flag-labels').innerHTML = w.flags.map((f, k) => `<div class="flag-label" data-flag="${k}"><b>${esc(oyuncuAdi(m.players[f.player]))}</b><span></span></div>`).join('');
-  const winnerMe = w.winner === me.team && !me.out;
   $('flag-banner').hidden = false;
   $('flag-title').textContent = t(w.winner === me.team ? 'bayrak.kazandin' : 'bayrak.kaybettin');
   $('flag-hint').textContent = t(winnerMe ? 'bayrak.ipucu' : 'bayrak.izle');

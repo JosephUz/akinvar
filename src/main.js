@@ -6,7 +6,7 @@ import { step, command, visibleTo, createBattle, applySnapshot, PER_BOLUK } from
 import { CLASSES, FAMILIES, HIT, CLASS_COUNT } from './units.js';
 import {
   createMatch, startBattle, startFlags, endRound, buyUnit, refundUnit, buyEco, refundEco, buyTalim, refundTalim,
-  setReady, ecoCost, talimCost, income, battleLosses, saveMatch, loadMatch,
+  setReady, ecoCost, talimCost, talimPaid, income, battleLosses, saveMatch, loadMatch,
 } from './match.js';
 import { View } from './view.js';
 import { sunucuBaglanti } from './ag.js';
@@ -236,7 +236,7 @@ function renderPrep() {
   const counts = new Map();
   for (const u of me.units) counts.set(u, (counts.get(u) ?? 0) + 1);
   $('cards').innerHTML = CLASSES.map((c) => {
-    const n = counts.get(c.index) ?? 0, fam = FAMILIES[c.family], lv = me.talim[c.index], up = talimCost(c.index, lv), max = lv >= TALIM.max;
+    const n = counts.get(c.index) ?? 0, fam = FAMILIES[c.family], lv = me.talim[c.index], up = talimCost(me), max = lv >= TALIM.max;
     return `<div class="card unit ${me.gold < c.cost ? 'poor' : ''} ${n ? 'has' : ''}" data-cls="${c.index}" style="--fam:${fam.color}" role="button" tabindex="0" title="${sinifAdi(c)} · ${sinifDetay(c)}">
       <div class="main">
         <div class="pic"><img class="soldier" src="${IMG(c)}" alt="" draggable="false" style="object-view-box:${viewBox.get(IMG(c)) ?? 'none'}">
@@ -278,20 +278,20 @@ function shake(el) { el.classList.remove('shake'); void el.offsetWidth; el.class
 // Hazırlık işlemi: tek başına maça doğrudan, çevrim içi sunucuya (ve anında geri bildirim için görünüme de) uygulanır.
 const ACT = {
   al: { run: (c) => buyUnit(m, me, c), back: (c) => refundUnit(m, me, c), cost: (c) => CLASSES[c].cost },
-  talim: { run: (c) => buyTalim(m, me, c), back: (c) => refundTalim(m, me, c), cost: (c) => talimCost(c, me.talim[c]), backCost: (c) => talimCost(c, me.talim[c]) },
-  eko: { run: () => buyEco(m, me), back: () => refundEco(m, me), cost: () => ecoCost(me.eco), backCost: () => ecoCost(me.eco) },
+  talim: { run: (c) => buyTalim(m, me, c), back: (c) => refundTalim(m, me, c), cost: () => talimCost(me), backCost: (c) => talimPaid(me, c) },
+  eko: { run: () => buyEco(m, me), back: () => refundEco(m, me), cost: () => ecoCost(me.eco), backCost: () => ecoCost(me.eco - 1) },
 };
 const NET = { al: ['al', 'geri'], talim: ['talim', 'talimGeri'], eko: ['eko', 'ekoGeri'] };
 function act(kind, arg, el, refund) {
   if (state !== 'prep' || me.ready) return;
-  const a = ACT[kind], cost = refund ? null : a.cost(arg);
+  // Kayan tutar işlemden önce: geri verilecek tutar, geri verince değişir.
+  const a = ACT[kind], amount = refund ? (a.backCost ? a.backCost(arg) : a.cost(arg)) : a.cost(arg);
   const ok = refund ? a.back(arg) : a.run(arg);
   if (!ok) { if (!refund) shake(el); return; }
   if (online) net({ t: NET[kind][refund ? 1 : 0], c: arg, f: arg });
   const sel = el.dataset.up ? `[data-up="${arg}"]` : el.dataset.cls ? `[data-cls="${arg}"]` : '#eco';
-  const back = refund ? (a.backCost ? a.backCost(arg) : a.cost(arg)) : cost;
   renderPrep();
-  floatAt(document.querySelector(sel), `${refund ? '+' : '−'}${num(back)}`, refund);
+  floatAt(document.querySelector(sel), `${refund ? '+' : '−'}${num(amount)}`, refund);
 }
 function prepClick(e, refund) {
   const up = e.target.closest('[data-up]'), card = e.target.closest('[data-cls]');

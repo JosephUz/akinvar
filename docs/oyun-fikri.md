@@ -104,7 +104,7 @@ Hazırlık ekranı alt bant değil, ekranı dolduran bir kart ızgarasıdır.
 - **Talim** kalıcı bir yükseltmedir, ekonomi gibi turlar boyunca korunur. **Her asker ailesinin talimi ayrıdır** ✅ (kılıçlı, mızraklı, okçu, atlı). Her seviye o ailenin askerlerine **+1 can** verir.
   - throneofcurse'te en yüksek can 11'dir (yetenek 100 → 10 + 1 ustalık bonusu).
   - Öneri: talim 8 seviye olur (3 → 11 can).
-  - Seviye bedeli: ~~500 × n~~ → bölük fiyatı × 2 × n (sınıfa göre; Silahsız ◉80, Atlı · Çelik kılıç ◉1.160) ✅.
+  - Seviye bedeli: ~~500 × n~~ → ~~bölük fiyatı × 2 × n~~ → oyuncunun tur gelirinin yarısı, her sınıfta ve her seviyede aynı (◉1.150 gelirde ◉575) ✅.
 
 ## Asker çeşitliliği ve dövüş (throneofcurse) ✅
 

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createMatch, startBattle, startFlags, endRound, buyUnit, refundUnit, buyEco, refundEco, buyTalim, ecoCost, talimCost, income, saveMatch, loadMatch } from '../src/match.js';
+import { createMatch, startBattle, startFlags, endRound, buyUnit, refundUnit, buyEco, refundEco, buyTalim, refundTalim, ecoCost, talimCost, income, saveMatch, loadMatch } from '../src/match.js';
 import { step, command, PER_BOLUK } from '../src/sim.js';
 import { CLASSES, CLASS_BY_KEY } from '../src/units.js';
 
@@ -13,15 +13,18 @@ test('tur başı gelir, kart al ve geri ver tam iade', () => {
   assert.ok(!refundUnit(m, me, c.index), 'almadığını geri veremez');
 });
 
-test('ekonomi 400 × n, her seviye tur başına +150; talim bölük fiyatı × 2 × n', () => {
+test('ekonomi 400 × n, her seviye tur başına +150; geliştirme tur gelirinin yarısı', () => {
   const m = createMatch({ seed: 2 }), me = m.players[0];
   assert.equal(ecoCost(0), 400); assert.equal(ecoCost(1), 800);
   assert.ok(buyEco(m, me)); assert.equal(me.gold, 600); assert.equal(income(me), 1150);
   assert.ok(refundEco(m, me)); assert.equal(me.gold, 1000);
-  const ucuz = CLASSES[0], pahali = CLASSES[CLASSES.length - 1];
-  assert.equal(talimCost(0, 0), Math.round(ucuz.cost * 2 / 10) * 10); assert.equal(talimCost(0, 1), Math.round(ucuz.cost * 4 / 10) * 10);
-  assert.ok(talimCost(pahali.index, 0) > talimCost(0, 0) * 5, 'çelik askerin geliştirmesi çok daha pahalı');
-  assert.ok(buyTalim(m, me, 2)); assert.equal(me.talim[2], 1);
+  assert.equal(talimCost(me), 500);
+  assert.ok(buyTalim(m, me, 2)); assert.equal(me.talim[2], 1); assert.equal(me.gold, 500);
+  assert.ok(buyTalim(m, me, 2)); assert.equal(me.gold, 0); // ikinci seviye de aynı bedel
+  assert.ok(refundTalim(m, me, 2)); assert.ok(refundTalim(m, me, 2)); assert.equal(me.gold, 1000);
+  assert.ok(buyEco(m, me)); assert.equal(talimCost(me), 575); // tur 1.150 → geliştirme 575
+  assert.ok(buyTalim(m, me, CLASSES.length - 1)); assert.equal(me.gold, 1000 - 400 - 575);
+  assert.ok(refundEco(m, me)); assert.ok(refundTalim(m, me, CLASSES.length - 1)); assert.equal(me.gold, 1000); // ödenen aynen döner
 });
 
 test('ölen asker kendi bayrağından, bayrağa giden rakibinkinden bir can götürür; gönderilmeyen dağılır', () => {

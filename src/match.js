@@ -8,9 +8,9 @@ const zeros = () => new Array(CLASS_COUNT).fill(0); // sınıf başına gelişti
 import { createBattle, startFlagPhase, mulberry32, command, PER_BOLUK, snapshot, applySnapshot } from './sim.js';
 
 export const ecoCost = (level) => ECONOMY.levelCost * (level + 1);
-/** Geliştir bedeli sınıfın bölük fiyatına bağlı: ucuz askerin canı ucuz, çeliğinki pahalı. */
-export const talimCost = (cls, level) => Math.round((CLASSES[cls].cost * TALIM.k * (level + 1)) / 10) * 10;
 export const income = (p) => ECONOMY.roundIncome + p.eco * ECONOMY.levelIncome;
+/** Geliştir bedeli her sınıfta ve her seviyede aynı: oyuncunun o anki tur gelirinin yarısı (ekonomi büyüdükçe artar). */
+export const talimCost = (p) => Math.round(income(p) * TALIM.share);
 
 /**
  * teamSize oyuncu takım başına. Tek başına: humans = [0] (oyuncu 0 insan, Mavi). Çevrim içi: seats[koltuk] = { name } ya da null (bot);
@@ -39,7 +39,7 @@ export function alivePlayers(m, team) { return m.players.filter((p) => !p.out &&
 function startRound(m) {
   m.round++; m.phase = 'prep'; m.battle = null;
   for (const p of m.players) {
-    p.units = []; p.ready = p.out; p.bought = { eco: 0, talim: zeros() };
+    p.units = []; p.ready = p.out; p.bought = { eco: 0, talim: zeros(), paid: {} };
     if (!p.out) p.gold += income(p);
   }
   for (const p of m.players) if (!p.human && !p.out) botPrep(m, p);
@@ -67,17 +67,25 @@ export function refundEco(m, p) {
   if (m.phase !== 'prep' || p.ready || !p.bought.eco) return false;
   p.eco--; p.bought.eco--; p.gold += ecoCost(p.eco); return true;
 }
+/** Bu turda o sınıfa son ödenen geliştirme bedeli (take: listeden düşer). */
+export function talimPaid(p, family, take = false) {
+  const list = p.bought.paid?.[family];
+  if (!list?.length) return talimCost(p);
+  return take ? list.pop() : list.at(-1);
+}
 /** Geliştir: o sınıfın her askerine +1 can (kalıcı). */
 export function buyTalim(m, p, family) {
   if (!(family >= 0 && family < CLASS_COUNT)) return false;
-  const lv = p.talim[family], cost = talimCost(family, lv);
+  const lv = p.talim[family], cost = talimCost(p);
   if (m.phase !== 'prep' || p.out || p.ready || lv >= TALIM.max || p.gold < cost) return false;
-  p.gold -= cost; p.talim[family]++; p.bought.talim[family]++; return true;
+  p.gold -= cost; p.talim[family]++; p.bought.talim[family]++;
+  ((p.bought.paid ??= {})[family] ??= []).push(cost); // geri verince ödenen aynen döner (arada ekonomi alınsa da)
+  return true;
 }
 export function refundTalim(m, p, family) {
   if (!(family >= 0 && family < CLASS_COUNT)) return false;
   if (m.phase !== 'prep' || p.ready || !p.bought.talim[family]) return false;
-  p.talim[family]--; p.bought.talim[family]--; p.gold += talimCost(family, p.talim[family]); return true;
+  p.talim[family]--; p.bought.talim[family]--; p.gold += talimPaid(p, family, true); return true;
 }
 export function setReady(m, p) { p.ready = true; }
 
@@ -190,7 +198,7 @@ export function botPrep(m, p) {
   // 2) Geliştir: dengeli ve karşı kurucu, en çok bastığı sınıfı
   if ((p.personality === 'dengeli' || p.personality === 'karsi') && r >= 3) {
     const fam = favoriteClass(p);
-    if (fam >= 0 && p.gold - talimCost(fam, p.talim[fam]) >= 400) buyTalim(m, p, fam);
+    if (fam >= 0 && p.gold - talimCost(p) >= 400) buyTalim(m, p, fam);
   }
   // 3) Askerler: kalan parayla. Açgözlü ve Dengeli sıradaki ekonomi seviyesi için bir kısmını biriktirir.
   const saving = p.eco < ecoTarget ? ({ acgozlu: 0.6, dengeli: 0.3 }[p.personality] ?? 0) : 0;

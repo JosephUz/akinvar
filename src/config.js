@@ -20,6 +20,9 @@ export const RETARGET = 1;    // bölük hedefini saniyede bir yeniler
 export const AUTO_RANGE = 24; // emirsiz oyuncu bölüğü bu yakındaki görünen düşmana kendiliğinden saldırır
 // Atlı okçu (vur-kaç): yakın dövüş bölüğü menzilin bu katından yakına gelince geri çekilir; alanın kenarına bu kadar yaklaşmaz.
 export const SKIRMISH = { kite: 0.7, edge: 6 };
+// Atlı hücumu: yakın dövüş atlısı çatışmaya girdiği an `time` sn boyunca mızraklı olmayanı `mult` kat isabetle vurur (tavan COMBAT.max).
+// Çatışmadan en az `rearm` sn çıkmadan yeniden hücum edemez.
+export const CHARGE = { time: 3, mult: 2, rearm: 3 };
 
 // Daralan alan: bekleme, sonra sıfıra kadar düzgün daralma. Dışarıdaki asker belli aralıkla can kaybeder.
 export const ZONE = { wait: 30, shrink: 150, damageEvery: 1.5 };

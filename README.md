@@ -36,7 +36,7 @@ Tarayıcıda Three.js ile çalışan, Total War esintili, tur tabanlı takım or
 - **Faz 2 (tur döngüsü):**
   - Ana ekranda takım (1v1–5v5, boş koltuklar bot) ve bayrak canı (100 / 1.000 / 10.000 / 100.000).
   - Hazırlık (45 sn): tam ekran kart ızgarası. Ekonomi (400 × n, tur başı +150) ve sınıf başına Geliştir (+1 can, her seviye tur gelirinin yarısı: ◉1.000 → ◉500, ◉1.150 → ◉575) kalıcı; throneofcurse'ün 39 sınıfı 4 × 10 ızgarada, her tık bir bölük, sağ tık tam iade.
-  - Savaş: throneofcurse üstünlük tablosu, arkadan vuruş +20, menzil, vuruş aralığı, atlı ve zırh hızı. Okçular ok atar; Türk yaylı atlı okçular vur-kaç yapar (yürürken atar, yakın dövüşçüden çekilir).
+  - Savaş: throneofcurse üstünlük tablosu, arkadan vuruş +20, menzil, vuruş aralığı, atlı ve zırh hızı. Okçular ok atar; Türk yaylı atlı okçular vur-kaç yapar (yürürken atar, yakın dövüşçüden çekilir). Yakın dövüş atlısı çatışmaya girdiği ilk 3 sn hücum eder: mızraklı olmayanı 2 kat isabetle vurur. Yakın dövüş isabetleri adım sonunda birlikte işlenir, itme yönden bağımsız (aynalı savaşlarda taraf üstünlüğü yok).
   - Savaşta ölen her asker kendi bayrağından bir can götürür (kazanan da kaybeden de).
   - Bayrak evresi (20 sn): kazananların sağ kalanları seçilen rakip bayrağa koşar, her biri bir can götürür; gönderilmeyen dağılır.
   - Bot kişilikleri: Açgözlü, Akıncı, Dengeli, Karşı kurucu.

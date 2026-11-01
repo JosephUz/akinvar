@@ -269,7 +269,8 @@ export { FAMILIES, PER_BOLUK };
 // ---------- tek başına kayıt ----------
 // Maç düz JSON'a çevrilir; üretecin yalnız durumu (rng.s) yazılır. Savaş sürüyorsa çevrim içi anlıkla (sim.js snapshot)
 // tam durumu base64 olarak eklenir: savaş kurulumundan (battleSetup) yeniden kurulup anlık üstüne yazılır.
-export const SAVE_VERSION = 1;
+// Sürüm 2: savaş anlığına atlı hücumu alanları eklendi; sürüm 1 kaydın yalnız hazırlıktakisi açılır.
+export const SAVE_VERSION = 2;
 
 const toB64 = (u8) => { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode(...u8.subarray(i, i + 0x8000)); return btoa(s); };
 const fromB64 = (s) => Uint8Array.from(atob(s), (ch) => ch.charCodeAt(0));
@@ -281,7 +282,7 @@ export function saveMatch(m) {
 
 /** Kayıttan maç; kayıt bozuksa ya da eski sürümdense null. */
 export function loadMatch(save) {
-  if (!save || save.v !== SAVE_VERSION || !save.m?.players?.length) return null;
+  if (!save || !(save.v === SAVE_VERSION || (save.v === 1 && !save.battle)) || !save.m?.players?.length) return null;
   const m = { ...save.m, rng: mulberry32(0), battle: null };
   m.rng.s = save.rng >>> 0;
   if (save.battle) {

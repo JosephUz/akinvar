@@ -157,6 +157,7 @@ export default {
   'hazir.bekleniyor': 'BEKLENİYOR…',
   'bilgi.bos': 'Bir kartın üstüne gel: malzemesi ve kime üstün olduğu burada görünür.',
   'bilgi.esyasiz': 'eşyasız',
+  'bilgi.hucum': 'Hücum: çatışmaya girdiği ilk {s} sn mızraklı olmayanı {k} kat isabetle vurur.',
   'bilgi.vurKac': 'Vur-kaç: yürürken ok atar, yakın dövüşçü yaklaşınca geri çekilerek atmaya devam eder.',
   'bilgi.askerBasi': 'ASKER BAŞI',
   'bilgi.ustun': 'ÜSTÜN',

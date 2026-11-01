@@ -110,3 +110,14 @@ test('atlı okçu vur-kaç: yaklaşan yakın dövüşçüden çekilir ve çekili
   assert.ok(shotWhileKiting > 0, 'geri çekilirken ok atmadı');
   assert.equal(w.winner, 0);
 });
+
+test('atlı hücumu: yakın dövüş atlısı çatışmaya girince 3 sn hücum eder, yaya ve atlı okçu etmez', () => {
+  const w = createBattle({ players: [{ team: 0, units: [cls('sw:ir-sh:ir-ho-ch'), cls('tb-no-ho-no')] }, army(1, 3, 'sw:ir-sh:ir-fo-ch')], seed: 4 });
+  const seen = new Set(); let maxT = 0;
+  while (w.winner < 0 && w.t < 200) {
+    step(w);
+    for (let b = 0; b < w.B; b++) if (w.bcharge[b] > 0) { seen.add(CLASSES[w.bcls[b]].key); maxT = Math.max(maxT, w.bcharge[b]); }
+  }
+  assert.deepEqual([...seen], ['sw:ir-sh:ir-ho-ch']);
+  assert.ok(maxT > 2.9 && maxT <= 3);
+});

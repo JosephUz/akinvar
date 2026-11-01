@@ -2,8 +2,8 @@
 // İki katman: bölük (emir, yürüyüş, hedef, çatışma) ve asker (yuvasını izler, yakın dövüşte hedef seçer, vurur ya da ok atar).
 // Asker verisi düz dizilerde tutulur; 10 binlerce asker için nesne oluşturulmaz.
 // Savaş bitince aynı dünyada bayrak evresi sürer: kazananların askerleri seçilen bayrağa koşar, her biri bir can götürür.
-import { TICK, BOLUK, SPACING, BOLUK_GAP, SOLDIER, ARROW, ENGAGE, RETARGET, AUTO_RANGE, SKIRMISH, ZONE, FLAG_TIME } from './config.js';
-import { CLASSES, FAMILIES, hitChance } from './units.js';
+import { TICK, BOLUK, SPACING, BOLUK_GAP, SOLDIER, ARROW, ENGAGE, RETARGET, AUTO_RANGE, SKIRMISH, CHARGE, ZONE, FLAG_TIME } from './config.js';
+import { CLASSES, FAMILIES, hitChance, COMBAT } from './units.js';
 
 export const PER_BOLUK = BOLUK.cols * BOLUK.rows;
 const CELL = 2;         // itme ve hedef arama ızgarası
@@ -64,6 +64,7 @@ export function createBattle({ players, seed = 1 }) {
     border: new Uint8Array(B), otarget: new Int32Array(B).fill(-1), oface: new Float32Array(B),
     goal: new Uint8Array(B), gx: new Float32Array(B), gz: new Float32Array(B), offx: new Float32Array(B), offz: new Float32Array(B),
     bflag: new Int32Array(B).fill(-1),
+    bcharge: new Float32Array(B), bfree: new Float32Array(B).fill(CHARGE.rearm), // atlı hücumu: kalan süre, çatışma dışında geçen süre
     bshoot: new Int32Array(B).fill(-1), bkite: new Uint8Array(B), // atlı okçu: her adımda yeniden hesaplanır, anlığa girmez
     alive: [0, 0], arrows: [], flags: [], flagT: 0,
   };
@@ -100,10 +101,12 @@ export function createBattle({ players, seed = 1 }) {
     }
   }
 
-  const span = Math.ceil((radius * 2) / CELL) + 2;
-  w.grid = { span, off: radius + CELL, head: new Int32Array(span * span), next: new Int32Array(Math.max(1, N)) };
-  const vs = Math.ceil((radius * 2) / VCELL) + 2;
-  w.vgrid = { span: vs, off: radius + VCELL };
+  // Izgaralar merkeze göre simetrik: başlangıç hücre boyunun katı. Değilse hücre sınırları kayar, aynalı konumdaki iki
+  // takımdan biri öbürünü bir hücre önce görür (batıdaki taraf aynalı savaşların çoğunu kazanıyordu).
+  const gridOff = Math.ceil(radius / CELL + 1) * CELL, span = (2 * gridOff) / CELL + 1;
+  w.grid = { span, off: gridOff, head: new Int32Array(span * span), next: new Int32Array(Math.max(1, N)) };
+  const vOff = Math.ceil(radius / VCELL + 1) * VCELL, vs = (2 * vOff) / VCELL + 1;
+  w.vgrid = { span: vs, off: vOff };
   w.vis = [new Uint8Array(vs * vs), new Uint8Array(vs * vs)];
   updateVision(w);
   if (w.alive[0] === 0 || w.alive[1] === 0) w.winner = w.alive[0] > 0 ? 0 : w.alive[1] > 0 ? 1 : 2;
@@ -324,9 +327,21 @@ export function step(w) {
     }
   }
 
+  // Atlı hücumu: yakın dövüş atlısı çatışmaya girdiği an (askerler koşuya geçer) hücum başlar.
+  for (let b = 0; b < w.B; b++) {
+    const cls = CLASSES[w.bcls[b]];
+    if (!cls.mounted || cls.ranged || !w.balive[b]) continue;
+    if (w.bengaged[b]) { if (w.bfree[b] >= CHARGE.rearm) w.bcharge[b] = CHARGE.time; w.bfree[b] = 0; }
+    else w.bfree[b] += dt;
+    if (w.bcharge[b] > 0) w.bcharge[b] = Math.max(0, w.bcharge[b] - dt);
+  }
+
   buildGrid(w);
   const { head, next, span, off } = w.grid;
   const R2 = (SOLDIER.radius * 2) ** 2, zone2 = w.zone * w.zone;
+  // Yakın dövüş isabetleri adım sonunda birlikte işlenir: aynı adımda vuruşan iki askerin ikisi de vurur,
+  // önce işlenen öbürünü öldürüp karşılığını kesmez (işleme sırası ve konum üstünlük vermesin).
+  const hits = [];
   for (let i = 0; i < w.N; i++) {
     if (w.hp[i] <= 0) continue;
     const b = w.boluk[i], ci = w.bcls[b], cls = CLASSES[ci], run = SOLDIER.run * cls.speed * dt;
@@ -359,7 +374,10 @@ export function step(w) {
         w.swing[i] = 0.35;
         // Arkadan vuruş: saldıran, savunanın baktığı yönün arkasındaysa (throneofcurse +20).
         const behind = Math.sin(w.face[t]) * -dx + Math.cos(w.face[t]) * -dz < -0.5 * d;
-        if (rng() < hitChance(ci, w.bcls[w.boluk[t]], behind) && --w.hp[t] <= 0) kill(w, t);
+        const tc = w.bcls[w.boluk[t]];
+        let h = hitChance(ci, tc, behind);
+        if (w.bcharge[b] > 0 && CLASSES[tc].model !== 'spear') h = Math.min(COMBAT.max, h * CHARGE.mult); // hücum, mızrak duvarına işlemez
+        if (rng() < h) hits.push(t);
       }
     } else if (cls.skirmish) {
       // Atlı okçu yuvasını izler (ilerlerken de, geri çekilirken de) ve menzildeki bölüğe at üstünden ok atar.
@@ -388,6 +406,8 @@ export function step(w) {
     w.x[i] += mx; w.z[i] += mz;
     separate(w, i, head, next, span, off, R2);
   }
+
+  for (const t of hits) if (w.hp[t] > 0 && --w.hp[t] <= 0) kill(w, t);
 
   // Oklar: düştüğü yerde hedef hâlâ oradaysa isabet zarı atılır.
   if (w.arrows.length) {
@@ -486,17 +506,22 @@ function flagStep(w) {
   return w;
 }
 
+// İtmeler askerin ilk konumundan toplanıp birlikte uygulanır. Sırayla uygulanınca komşular hep batıdan doğuya
+// tarandığı için itme yöne bağlı kayıyordu ve aynalı savaşlarda batıdaki taraf çoğunlukla kazanıyordu.
 function separate(w, i, head, next, span, off, R2) {
-  const gx = Math.floor((w.x[i] + off) / CELL), gz = Math.floor((w.z[i] + off) / CELL), r = Math.sqrt(R2);
+  const x = w.x[i], z = w.z[i];
+  const gx = Math.floor((x + off) / CELL), gz = Math.floor((z + off) / CELL), r = Math.sqrt(R2);
+  let mx = 0, mz = 0;
   for (let cz = Math.max(0, gz - 1); cz <= Math.min(span - 1, gz + 1); cz++)
     for (let cx = Math.max(0, gx - 1); cx <= Math.min(span - 1, gx + 1); cx++)
       for (let j = head[cz * span + cx]; j !== -1; j = next[j]) {
         if (j === i || w.hp[j] <= 0) continue;
-        const dx = w.x[i] - w.x[j], dz = w.z[i] - w.z[j], d2 = dx * dx + dz * dz;
+        const dx = x - w.x[j], dz = z - w.z[j], d2 = dx * dx + dz * dz;
         if (d2 >= R2 || d2 < 1e-8) continue;
         const d = Math.sqrt(d2), push = (r - d) * 0.5;
-        w.x[i] += (dx / d) * push; w.z[i] += (dz / d) * push;
+        mx += (dx / d) * push; mz += (dz / d) * push;
       }
+  w.x[i] = x + mx; w.z[i] = z + mz;
 }
 
 function pickMember(w, b, rng) {
@@ -514,7 +539,7 @@ function kill(w, i) {
 // Sunucu birkaç saniyede bir savaşın tam durumunu yollar; istemcinin kayan sayıları farklı motorda azıcık ayrışsa bile
 // bir sonraki anlıkta düzelir. Biçim: [başlık uzunluğu u32][başlık JSON][4'e hizalı diziler].
 const SOLDIER_FIELDS = ['x', 'z', 'face', 'cd', 'swing', 'zoneT', 'diedAt', 'hp', 'spent', 'target', 'slot'];
-const BOLUK_FIELDS = ['bx', 'bz', 'bface', 'cx', 'cz', 'oface', 'gx', 'gz', 'btarget', 'otarget', 'bflag', 'bengaged', 'border', 'goal', 'bhuman', 'balive'];
+const BOLUK_FIELDS = ['bx', 'bz', 'bface', 'cx', 'cz', 'oface', 'gx', 'gz', 'btarget', 'otarget', 'bflag', 'bengaged', 'border', 'goal', 'bhuman', 'balive', 'bcharge', 'bfree'];
 
 export function snapshot(w) {
   const arrays = [...SOLDIER_FIELDS, ...BOLUK_FIELDS].map((k) => w[k]).concat(w.vis);

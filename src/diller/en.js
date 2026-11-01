@@ -151,6 +151,7 @@ export default {
   'hazir.bekleniyor': 'WAITING…',
   'bilgi.bos': 'Hover a card: its materials and what it beats show up here.',
   'bilgi.esyasiz': 'no gear',
+  'bilgi.hucum': 'Charge: for the first {s} s of a fight it hits non-spearmen with {k}× the chance.',
   'bilgi.vurKac': 'Hit and run: shoots while moving and falls back from melee while still shooting.',
   'bilgi.askerBasi': 'PER SOLDIER',
   'bilgi.ustun': 'STRONG VS',

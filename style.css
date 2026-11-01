@@ -53,7 +53,7 @@ h1 em{color:var(--gold);font-weight:normal}
 .ad-alan{display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
 .ad-alan input{background:#14251ccc;border:1px solid var(--line);border-radius:4px;padding:.6em .8em;max-width:280px}
 .tek{display:flex;flex-direction:column;gap:10px;padding:14px;border:1px solid #7d8a6640;background:#13241b99}
-.tek #play{align-self:flex-start;min-width:240px}
+.tek #play,.tek #devam{align-self:flex-start;min-width:240px}
 .secim{display:flex;flex-direction:column;gap:5px}
 .opts{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.opts.five{grid-template-columns:repeat(5,1fr)}.opts.three{grid-template-columns:repeat(3,1fr)}
 .opts button{display:flex;flex-direction:column;align-items:flex-start;padding:.45em .7em;background:#192c23c9}

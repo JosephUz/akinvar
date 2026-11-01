@@ -40,6 +40,7 @@ Tarayıcıda Three.js ile çalışan, Total War esintili, tur tabanlı takım or
   - Savaşta ölen her asker kendi bayrağından bir can götürür (kazanan da kaybeden de).
   - Bayrak evresi (20 sn): kazananların sağ kalanları seçilen rakip bayrağa koşar, her biri bir can götürür; gönderilmeyen dağılır.
   - Bot kişilikleri: Açgözlü, Akıncı, Dengeli, Karşı kurucu.
+  - Tek başına maç tarayıcıda kendiliğinden kaydedilir (hazırlık, savaşın ortası, bayrak evresi; birkaç saniyede bir ve sekme kapanırken). Ana ekranda Devam et kaldığı yerden açar, maç bitince kayıt silinir.
 
 - **Faz 3 (çevrim içi ve hazırlık arayüzü):**
   - josephuz oda standardı: ADIN, tek başına, ÇEVRİM İÇİ (hızlı katıl, oda kur, odaya katıl), açık odalar, bekleme odası (Mavi / Kırmızı koltuklar, takım, bayrak canı, bot zorluğu, açık / özel), davet linki ?oda=KOD, jetonla geri dönüş, kopanın yerine bot.

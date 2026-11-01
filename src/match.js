@@ -5,7 +5,7 @@ import { ECONOMY, TALIM, PERSONALITIES, TEAMS, DIFFICULTY } from './config.js';
 import { CLASSES, CLASS_COUNT, HIT, FAMILIES } from './units.js';
 
 const zeros = () => new Array(CLASS_COUNT).fill(0); // sınıf başına geliştirme seviyesi
-import { createBattle, startFlagPhase, mulberry32, command, PER_BOLUK } from './sim.js';
+import { createBattle, startFlagPhase, mulberry32, command, PER_BOLUK, snapshot, applySnapshot } from './sim.js';
 
 export const ecoCost = (level) => ECONOMY.levelCost * (level + 1);
 /** Geliştir bedeli sınıfın bölük fiyatına bağlı: ucuz askerin canı ucuz, çeliğinki pahalı. */
@@ -257,3 +257,29 @@ function botFlags(m, p) {
 }
 
 export { FAMILIES, PER_BOLUK };
+
+// ---------- tek başına kayıt ----------
+// Maç düz JSON'a çevrilir; üretecin yalnız durumu (rng.s) yazılır. Savaş sürüyorsa çevrim içi anlıkla (sim.js snapshot)
+// tam durumu base64 olarak eklenir: savaş kurulumundan (battleSetup) yeniden kurulup anlık üstüne yazılır.
+export const SAVE_VERSION = 1;
+
+const toB64 = (u8) => { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode(...u8.subarray(i, i + 0x8000)); return btoa(s); };
+const fromB64 = (s) => Uint8Array.from(atob(s), (ch) => ch.charCodeAt(0));
+
+export function saveMatch(m) {
+  const { rng, battle, ...rest } = m;
+  return { v: SAVE_VERSION, rng: rng.s, m: rest, battle: battle ? toB64(snapshot(battle)) : null };
+}
+
+/** Kayıttan maç; kayıt bozuksa ya da eski sürümdense null. */
+export function loadMatch(save) {
+  if (!save || save.v !== SAVE_VERSION || !save.m?.players?.length) return null;
+  const m = { ...save.m, rng: mulberry32(0), battle: null };
+  m.rng.s = save.rng >>> 0;
+  if (save.battle) {
+    if (!m.battleSetup) return null;
+    m.battle = createBattle(m.battleSetup);
+    if (!applySnapshot(m.battle, fromB64(save.battle))) return null;
+  }
+  return m;
+}

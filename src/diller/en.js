@@ -18,6 +18,8 @@ export default {
   'ana.adin': 'YOUR NAME',
   'ana.varsayilanAd': 'Commander',
   'ana.tekBasina': 'SINGLE PLAYER',
+  'ana.devam': 'CONTINUE · ROUND {n}',
+  'ana.kayitBozuk': 'The save could not be loaded, start a new match.',
   'ana.altSol': 'JOSEPHUZ GAMES',
   'ana.altSag': 'VS BOTS OR ONLINE · UP TO 5v5',
   'ana.tekeTek': 'one on one',

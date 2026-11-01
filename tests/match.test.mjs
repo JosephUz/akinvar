@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createMatch, startBattle, startFlags, endRound, buyUnit, refundUnit, buyEco, refundEco, buyTalim, ecoCost, talimCost, income } from '../src/match.js';
+import { createMatch, startBattle, startFlags, endRound, buyUnit, refundUnit, buyEco, refundEco, buyTalim, ecoCost, talimCost, income, saveMatch, loadMatch } from '../src/match.js';
 import { step, command, PER_BOLUK } from '../src/sim.js';
 import { CLASSES, CLASS_BY_KEY } from '../src/units.js';
 
@@ -59,4 +59,32 @@ test('botlar arası maç biter', () => {
   }
   assert.equal(m.phase, 'over');
   assert.ok(m.players.some((p) => p.out));
+});
+
+test('kayıt: hazırlıkta, savaşın ortasında ve bayrak evresinde kaydedilen maç aynen sürer', () => {
+  const m = createMatch({ teamSize: 2, seed: 9 }), me = m.players[0];
+  buyUnit(m, me, CLASS_BY_KEY['tb-no-ho-no'].index); buyUnit(m, me, CLASSES[3].index); me.ready = true;
+  const roundTrip = (x) => loadMatch(JSON.parse(JSON.stringify(saveMatch(x))));
+  const prep = roundTrip(m);
+  assert.equal(prep.players[0].gold, me.gold); assert.deepEqual(prep.players[0].units, me.units);
+  assert.equal(prep.rng(), m.rng());
+
+  startBattle(m);
+  for (let k = 0; k < 400; k++) step(m.battle);
+  const mid = roundTrip(m);
+  const fingerprint = (x) => { const w = x.battle; let s = w.alive.join(); for (let i = 0; i < w.N; i += 7) s += `|${w.hp[i]},${w.x[i].toFixed(3)}`; return s + `|${w.arrows.length}|${w.t.toFixed(2)}`; };
+  assert.equal(fingerprint(mid), fingerprint(m));
+  for (const x of [m, mid]) { while (x.battle.winner < 0 && x.battle.t < 600) step(x.battle); }
+  assert.equal(fingerprint(mid), fingerprint(m));
+
+  startFlags(m); startFlags(mid);
+  if (m.battle.phase === 'flag') {
+    for (let k = 0; k < 20; k++) { step(m.battle); step(mid.battle); }
+    const fl = roundTrip(m);
+    assert.equal(fl.battle.phase, 'flag'); assert.equal(fl.battle.flagT, m.battle.flagT);
+    assert.deepEqual(fl.battle.flags, m.battle.flags);
+  }
+  for (const x of [m, mid]) { while (x.battle.phase === 'flag') step(x.battle); endRound(x); }
+  assert.deepEqual(mid.players.map((p) => [p.hp, p.gold, p.eco]), m.players.map((p) => [p.hp, p.gold, p.eco]));
+  assert.equal(loadMatch({ v: 0 }), null);
 });

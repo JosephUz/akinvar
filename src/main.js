@@ -6,7 +6,7 @@ import { step, command, visibleTo, createBattle, applySnapshot, PER_BOLUK } from
 import { CLASSES, FAMILIES, HIT, CLASS_COUNT } from './units.js';
 import {
   createMatch, startBattle, startFlags, endRound, buyUnit, refundUnit, buyEco, refundEco, buyTalim, refundTalim,
-  setReady, ecoCost, talimCost, income, battleLosses,
+  setReady, ecoCost, talimCost, income, battleLosses, saveMatch, loadMatch,
 } from './match.js';
 import { View } from './view.js';
 import { sunucuBaglanti } from './ag.js';
@@ -90,18 +90,49 @@ function startSolo() {
   enterGame(); enterPrep(PREP_TIME);
 }
 
+// ---------- tek başına kayıt ----------
+// Tek başına maç bu tarayıcıda kendiliğinden kaydedilir: hazırlığa girince, bayrak evresinde, birkaç saniyede bir,
+// sekme kapanırken ve ana menüye dönerken. Ana ekrandaki Devam et kaldığı yerden açar; maç bitince kayıt silinir.
+const KAYIT = 'akinvar.kayit', KAYIT_ARALIK = 3;
+let kayitT = 0;
+function kaydet() {
+  if (online || !m || m.phase === 'over' || state === 'over' || state === 'menu') return;
+  try { localStorage.setItem(KAYIT, JSON.stringify({ ...saveMatch(m), prepLeft: Math.max(0, prepLeft), at: Date.now() })); } catch { /* gizli pencere ya da yer yok */ }
+}
+function kayitOku() { try { return JSON.parse(localStorage.getItem(KAYIT)); } catch { return null; } }
+function kayitSil() { try { localStorage.removeItem(KAYIT); } catch { /* yok */ } devamYaz(); }
+function devamYaz() {
+  const s = kayitOku(), b = $('devam');
+  b.hidden = !(s?.m?.round > 0);
+  if (!b.hidden) b.querySelector('[data-k]').textContent = t('ana.devam', { n: s.m.round });
+}
+
+function devamEt() {
+  const s = kayitOku();
+  const loaded = s && loadMatch(s);
+  if (!loaded) { kayitSil(); toast(t('ana.kayitBozuk'), 2600); return; }
+  online = false; m = loaded;
+  me = m.players.find((p) => p.human) ?? m.players[0];
+  enterGame();
+  if (m.phase === 'prep') { enterPrep(Math.min(PREP_TIME, Math.max(10, s.prepLeft ?? PREP_TIME))); return; }
+  w = m.battle; setupBattle();
+  if (w.phase === 'flag') showFlags();
+  else if (w.phase === 'done') roundOver();
+}
+
 function toHome() {
+  kaydet();
   state = 'menu'; m = null; online = false; netQueue.length = 0; document.body.classList.remove('playing');
   for (const d of document.querySelectorAll('dialog[open]')) d.close();
   $('home').hidden = false; $('hud').hidden = true; $('orders').hidden = true; $('prep').hidden = true; $('flag-banner').hidden = true;
   $('flag-labels').innerHTML = ''; $('bekleme').hidden = true;
-  menuBattle(); lobiYaz(); lobiYenile();
+  menuBattle(); lobiYaz(); lobiYenile(); devamYaz();
 }
 
 function enterPrep(left) {
   state = 'prep'; prepLeft = left; $('flag-labels').innerHTML = ''; $('flag-banner').hidden = true; $('orders').hidden = true;
   if (me.out) { $('prep').hidden = true; if (!online) beginBattle(); return; } // elenen izler: hazırlık yok
-  $('prep').hidden = false; renderPrep(); hud();
+  $('prep').hidden = false; renderPrep(); hud(); kaydet();
 }
 
 /** Tek başına: savaşı tarayıcı kurar. Çevrim içi: sunucunun 'savas' mesajıyla aynı kurulum (setupBattle). */
@@ -118,13 +149,19 @@ function setupBattle() {
   view.fogOn = !me.out;
   $('prep').hidden = true; $('orders').hidden = me.out; state = 'battle'; acc = 0;
   buildTags(); selected = new Set(); syncSelection(); focusArmy();
-  if (!online && w.winner >= 0) toFlags(); // bir taraf hiç asker almadıysa savaş olmaz
+  if (!online && w.winner >= 0 && w.phase === 'battle') toFlags(); // bir taraf hiç asker almadıysa savaş olmaz
   hud();
 }
 
 function toFlags() {
   if (!online) startFlags(m);
   if (w.phase !== 'flag') { if (!online) roundOver(); return; }
+  showFlags();
+  kaydet();
+}
+
+/** Bayrak evresinin ekranı (kayıttan açılınca da). */
+function showFlags() {
   // Kazanan oyuncunun sağ kalan bütün bölükleri seçili gelir: tek tıkla hepsi bayrağa sürülür.
   const winnerMe = w.winner === me.team && !me.out;
   state = 'flag'; selected = new Set(winnerMe ? [...Array(w.B).keys()].filter((b) => mine(b) && w.balive[b]) : []); syncSelection();
@@ -145,7 +182,7 @@ function toFlags() {
 /** Tur bitti. Tek başına: maçı burada ilerletir. Çevrim içi: sunucunun yeni maç görünümü gelmiştir (before = eski canlar). */
 function roundOver(before = new Map(m.players.map((p) => [p.id, m.hpBefore?.[p.id] ?? p.hp])), result = null) {
   state = 'roundEnd'; $('flag-banner').hidden = true; $('orders').hidden = true;
-  if (!online) endRound(m);
+  if (!online) { endRound(m); prepLeft = PREP_TIME; if (m.phase === 'over') kayitSil(); else kaydet(); }
   const lost = m.players.filter((p) => before.get(p.id) !== p.hp).map((p) => `${oyuncuAdi(p)} −${num(before.get(p.id) - p.hp)}${p.out ? ' ' + t('tur.elendi') : ''}`);
   const wn = (result ?? m.log.at(-1))?.winner;
   toast(wn === 2 || wn === undefined ? t('tur.berabere') : t('tur.kazandi', { takim: takimAdi(wn) }) + (lost.length ? ' ' + lost.join(' · ') : ''), 3200);
@@ -155,7 +192,7 @@ function roundOver(before = new Map(m.players.map((p) => [p.id, m.hpBefore?.[p.i
 }
 
 function finish() {
-  state = 'over';
+  state = 'over'; if (!online) kayitSil();
   const won = m.winner === me.team;
   $('end-eyebrow').textContent = t(won ? 'son.zaferGoz' : 'son.yenilgiGoz', { n: m.round });
   $('end-title').textContent = t(won ? 'son.zafer' : 'son.yenilgi');
@@ -706,6 +743,7 @@ function frame(now) {
     }
   }
   if (online && state === 'prep') prepLeft -= dt;
+  if (!online && m && (state === 'prep' || state === 'battle' || state === 'flag') && (kayitT += dt) >= KAYIT_ARALIK) { kayitT = 0; kaydet(); }
   if (running && state !== 'menu') {
     if (state === 'battle' && !online && w.winner >= 0) toFlags();
     else if (state === 'flag' && w.phase === 'done' && !online) roundOver();
@@ -794,6 +832,9 @@ for (const b of document.querySelectorAll('[data-zor]')) b.onclick = () => { sec
 $('ad').value = secim.ad;
 $('ad').oninput = () => { secim.ad = $('ad').value.slice(0, 16); save('akinvar.ad', secim.ad); };
 $('play').onclick = startSolo;
+$('devam').onclick = devamEt;
+addEventListener('pagehide', kaydet);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') kaydet(); });
 $('pause').onclick = () => { paused = !paused; syncButtons(); };
 $('speed').onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 4 : 1; syncButtons(); };
 $('stop').onclick = () => order({ type: 'stop' });
@@ -816,6 +857,6 @@ window.__akinCmd = {
 };
 
 dilUygula(); dilDugmesi($('dil'));
-showInfo(null); menuBattle(); syncButtons(); hud(); lobiYaz(); lobiBaglan();
+showInfo(null); menuBattle(); syncButtons(); hud(); lobiYaz(); lobiBaglan(); devamYaz();
 if (params.has('oyna')) startSolo();
 requestAnimationFrame(frame);

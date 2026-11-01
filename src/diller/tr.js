@@ -19,6 +19,8 @@ export default {
   'ana.adin': 'ADIN',
   'ana.varsayilanAd': 'Komutan',
   'ana.tekBasina': 'TEK BAŞINA',
+  'ana.devam': 'DEVAM ET · TUR {n}',
+  'ana.kayitBozuk': 'Kayıt açılamadı, yeni maç başlat.',
   'ana.altSol': 'JOSEPHUZ OYUNLARI',
   'ana.altSag': "BOTLARA KARŞI YA DA ÇEVRİM İÇİ · 5v5'E KADAR",
   'ana.tekeTek': 'teke tek',

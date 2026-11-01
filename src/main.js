@@ -226,7 +226,30 @@ function focusArmy() {
 const EDGE = CLASSES.map((a) => CLASSES.map((d) => ({ d, s: HIT[a.index * CLASS_COUNT + d.index] - HIT[d.index * CLASS_COUNT + a.index] })).sort((x, y) => y.s - x.s));
 const MAT = [['wood', 'WOOD'], ['iron', 'IRON'], ['steel', 'STEEL'], ['leather', 'LEATHER'], ['wheat', 'WHEAT']]; // ad: mal.<anahtar>
 
+// Hazırlık filtresi (çok seçmeli): seçilen her özelliği taşıyan kartlar görünür, ör. mızrak + kalkan + atlı.
+const FILTRE = [
+  ['kilic', (c) => c.model === 'sword' || c.model === 'great'],
+  ['mizrak', (c) => c.model === 'spear'],
+  ['yay', (c) => c.ranged],
+  ['kalkan', (c) => c.shield > 0],
+  ['atli', (c) => c.mounted],
+];
+const filtre = new Set(loadS('akinvar.filtre', '').split(',').filter((k) => FILTRE.some(([f]) => f === k)));
+const filtredeMi = (c) => FILTRE.every(([k, f]) => !filtre.has(k) || f(c));
+function renderFiltre() {
+  $('filtre').innerHTML = `<span class="eyebrow">${t('filtre.baslik')}</span>` + FILTRE.map(([k]) => `<button data-filtre="${k}" class="${filtre.has(k) ? 'secili' : ''}" aria-pressed="${filtre.has(k)}">${t('filtre.' + k)}</button>`).join('')
+    + (filtre.size ? `<button class="temizle" data-filtre="">${t('filtre.temizle')}</button>` : '');
+}
+$('filtre').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-filtre]'); if (!b) return;
+  const k = b.dataset.filtre;
+  if (!k) filtre.clear(); else if (filtre.has(k)) filtre.delete(k); else filtre.add(k);
+  save('akinvar.filtre', [...filtre].join(','));
+  renderPrep();
+});
+
 function renderPrep() {
+  renderFiltre();
   $('prep-round').textContent = t('hazirlik.tur', { n: m.round });
   $('prep-gold').textContent = num(me.gold);
   $('prep-income').textContent = t('hazirlik.gelir', { n: num(income(me)) });
@@ -235,7 +258,8 @@ function renderPrep() {
   $('eco').classList.toggle('poor', me.gold < eco);
   const counts = new Map();
   for (const u of me.units) counts.set(u, (counts.get(u) ?? 0) + 1);
-  $('cards').innerHTML = CLASSES.map((c) => {
+  const gorunen = CLASSES.filter(filtredeMi);
+  $('cards').innerHTML = (gorunen.length ? '' : `<p class="bos">${t('filtre.bos')}</p>`) + gorunen.map((c) => {
     const n = counts.get(c.index) ?? 0, fam = FAMILIES[c.family], lv = me.talim[c.index], up = talimCost(me), max = lv >= TALIM.max;
     return `<div class="card unit ${me.gold < c.cost ? 'poor' : ''} ${n ? 'has' : ''}" data-cls="${c.index}" style="--fam:${fam.color}" role="button" tabindex="0" title="${sinifAdi(c)} · ${sinifDetay(c)}">
       <div class="main">
@@ -509,7 +533,7 @@ addEventListener('keydown', (e) => {
   if (k === 'p' && !online) { paused = !paused; syncButtons(); }
   if (!canCommand()) return;
   if (e.key === ' ') { e.preventDefault(); order({ type: 'stop' }); }
-  if (['1', '2', '3', '4'].includes(k)) selectWhere((b) => CLASSES[w.bcls[b]].family === Number(k) - 1, e.shiftKey);
+  if (['1', '2', '3', '4', '5'].includes(k)) selectWhere((b) => CLASSES[w.bcls[b]].family === Number(k) - 1, e.shiftKey);
   if (k === '`' || k === '"' || (k === 'a' && e.ctrlKey)) { e.preventDefault(); selectWhere(() => true); }
 });
 addEventListener('keyup', (e) => keys.delete(e.key.toLowerCase()));

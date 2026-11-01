@@ -47,7 +47,7 @@ Tarayıcıda Three.js ile çalışan, Total War esintili, tur tabanlı takım or
   - Maçı sunucu yürütür (20 Hz); istemci savaşı sunucunun adımları ve emirleriyle aynen koşar, 3 sn'de bir ikili anlıkla düzeltir.
   - Savaş: her bölüğün üstünde siyah zeminde asker görselli sancak (askerlerin çizilen konumunu her karede izler), üstü aile renginde, çerçevesi oyuncu renginde; kalkan, miğfer, omuzluk ve silah malzemesine göre boyalı (tahta/deri kahve, demir gri, çelik parlak). Seçilen bölükler sol altta sınıf sınıf deste kartı (×n, kalan asker çubuğu).
   - Hazırlık: throneofcurse asker görselleri ve eşya ikonlu kartlar, en ucuz sol üstte, sınıf başına Geliştir, bilgi şeridi (malzeme, üstün / zayıf olduğu sınıflar).
-  - Fiyatlar throneofcurse üretim tariflerinden (odun, demir, çelik, deri, yem).
+  - Fiyat donanımın toplamı: asker + silah + kalkan + zırh + at (units.js PRICE). Hazırlıkta çok seçmeli süzgeç (kılıç, mızrak, yay, kalkan, atlı).
   - Emirsiz bölükler botun yapay zekâsıyla savaşır; bot zorluğu Kolay / Orta / Zor.
 
 Sunucuyu başlat: Unknown command: "start"

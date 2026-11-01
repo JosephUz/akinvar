@@ -134,7 +134,8 @@ Zorluk ayarı kişilik karışımı ve karar kalitesiyle yapılır. Savaşta bot
 
 - **Talim → Geliştir, sınıf başına:** her kartın sağ üstünde ⬆ Geliştir; o sınıfın askerine +1 can (500 × n, en çok 8). Ayrı talim kartları kalktı.
 - **Kart sırası:** fiyata göre, en ucuz sol üstte. Kartlarda throneofcurse asker görseli ve eşya ikonları; altta bilgi şeridi (malzeme, üstün / zayıf olduğu sınıflar).
-- **Fiyat:** ~~ham maddeden 40 + 36 × değer^0,35~~ → önce silah seviyesi: silahsız ◉40 < tahta (tahta mızrak, yay) ◉80–140 < demir (kılıç, mızrak, iki el, uzun yay, arbalet) ◉150–320 < çelik (çelik silahlar, Türk yayı) ◉330–580. Bir seviyenin en pahalısı bir üstün en ucuzundan ucuz. Seviye içinde kalkan (tahta 20, demir 30, çelik 50), zırh (deri 30, zincir 50, çelik 100), at (40–80, zırhıyla) ve silahın ham maddesine göre 10'ar adım.
+- **Fiyat:** ~~ham maddeden 40 + 36 × değer^0,35~~ → ~~önce silah seviyesi (tahta < demir < çelik)~~ (tek başına Türk yayı, demir takımlı atlıdan pahalı çıkıyordu) → donanımın toplamı (units.js PRICE): asker 40 + silah (tahta mızrak 30, yay 40, demir mızrak 60, demir kılıç 80, uzun yay 90, demir iki el 100, arbalet 100, çelik mızrak 120, Türk yayı 130, çelik kılıç 150, çelik iki el 180) + kalkan (tahta 20, demir 50, çelik 90) + zırh (deri 40, zincir 90, çelik 160) + at (zırhıyla: 100 / 140 / 200 / 280). Silahsız ◉40 … çelik takımlı atlı ◉720. ✅
+- **Aileler:** kılıçlı, mızraklı, okçu, atlı, atlı okçu (elinde yay olan atlı). Hazırlıkta çok seçmeli süzgeç: Kılıç · Mızrak · Yay · Kalkan · Atlı, seçilenlerin hepsini taşıyan kartlar görünür. ✅
 - **Eşit şartlar:** emirsiz bölük, oyuncununki de, botun yapay zekâsıyla savaşır; emir alan bölük oyuncunun olur (Dur: yerinde bekler).
 - **Bot zorluğu:** Kolay (paranın %70'i, karşı kurmaz) · Orta (%85) · Zor (hepsi).
 - **Çevrim içi:** oda standardı; maçı sunucu yürütür, istemci aynı adımları koşar.

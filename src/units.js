@@ -37,35 +37,16 @@ const ARMORS = {
   st: { speed: 0.8, horse: 1.7, item: 'STEEL_ARMOR_SET', img: 'st_as', horseItem: 'STEEL_ARMORED_HORSE' },
 };
 
-// Fiyat (bir bölük, 20 asker) önce silahın seviyesinden: silahsız < tahta < demir < çelik. Bir seviyenin en pahalısı bile
-// bir üst seviyenin en ucuzundan ucuzdur. Yay tahta, uzun yay ve arbalet demir, Türk yayı çelik seviyesindedir.
-// Seviye içinde fiyatı kalkan, zırh (deri < zincir < çelik) ve at şekillendirir; aynı seviyedeki silahlar
-// throneofcurse ham maddesine göre 10'ar artar (ör. demirde mızrak < uzun yay < arbalet < kılıç < iki el kılıcı).
-const RAW_VALUE = { wood: 1, iron: 2, cattle: 1.5, wheat: 0.5 };
-const WEAPON_TIER = { ua: 0, 'sp:wo': 1, bo: 1, 'sp:ir': 2, 'sw:ir': 2, '2s:ir': 2, lb: 2, cb: 2, 'sp:st': 3, 'sw:st': 3, '2s:st': 3, tb: 3 };
-const PRICE = {
-  first: [40, 80], gap: 10, weaponStep: 10,
-  shield: { no: 0, 'sh:wo': 20, 'sh:ir': 30, 'sh:st': 50 },
-  armor: { no: 0, le: 30, ch: 50, st: 100 },
-  horse: { no: 40, le: 50, ch: 60, st: 80 },                      // at, binicinin zırhıyla aynı katmandan zırhlı
+// Fiyat (bir bölük, 20 asker) donanımın toplamı: asker + silah + kalkan + zırh + at (at, binicinin zırhıyla aynı katmandan zırhlı).
+// Böylece tek bir pahalı silah, bütün takımı giymiş askerden pahalı olamaz (ör. Türk yayı 170 < demir kılıç, demir kalkan, zincir, zincirli at 460).
+export const PRICE = {
+  soldier: 40,
+  weapon: { ua: 0, 'sp:wo': 30, bo: 40, 'sp:ir': 60, 'sw:ir': 80, lb: 90, '2s:ir': 100, cb: 100, 'sp:st': 120, tb: 130, 'sw:st': 150, '2s:st': 180 },
+  shield: { no: 0, 'sh:wo': 20, 'sh:ir': 50, 'sh:st': 90 },
+  armor: { no: 0, le: 40, ch: 90, st: 160 },
+  horse: { no: 100, le: 140, ch: 200, st: 280 },
 };
-const valueOf = (item) => { const m = MALZEME[item] ?? {}; return Object.keys(RAW_VALUE).reduce((s, k) => s + (m[k] ?? 0) * RAW_VALUE[k], 0); };
-/** Bütün sınıfların fiyatı birlikte: her seviyenin tabanı bir alttakinin en pahalısının hemen üstü. */
-function priceAll(list) {
-  const extra = (c) => {
-    const p = parse(c.key), same = Object.keys(WEAPON_TIER).filter((k) => WEAPON_TIER[k] === WEAPON_TIER[p.w]);
-    const rank = same.map((k) => valueOf(WEAPONS[k].item)).sort((a, b) => a - b).indexOf(valueOf(WEAPONS[p.w].item));
-    return rank * PRICE.weaponStep + PRICE.shield[p.sh] + PRICE.armor[p.armor] + (p.mounted ? PRICE.horse[p.armor] : 0);
-  };
-  let base = 0;
-  for (let tier = 0; tier <= 3; tier++) {
-    const group = list.filter((c) => WEAPON_TIER[parse(c.key).w] === tier);
-    base = Math.max(PRICE.first[tier] ?? 0, base);
-    for (const c of group) { c.tier = tier; c.cost = base + extra(c); }
-    base = Math.max(...group.map((c) => c.cost)) + PRICE.gap;
-  }
-  return list;
-}
+const priceOf = (p) => PRICE.soldier + PRICE.weapon[p.w] + PRICE.shield[p.sh] + PRICE.armor[p.armor] + (p.mounted ? PRICE.horse[p.armor] : 0);
 
 // throneofcurse warriors/*.png görsel kodu: en ayrıntılıdan genele (SoldierVisual.tsx resolveSoldierVisualCode)
 const VISUALS = new Set(['wo_sp', 'wo_sp_wo_sh', 'ir_sp', 'ir_sp_ir_sh', 'ir_sp_ir_sh_le_as', 'ir_sp_ir_sh_ch_as', 'ir_1s', 'ir_1s_ir_sh', 'ir_1s_ir_sh_le_as',
@@ -86,6 +67,7 @@ export const FAMILIES = [
   { key: 'mizrak', color: '#8fc07a' },
   { key: 'okcu', color: '#7eb0e0' },
   { key: 'atli', color: '#e0906e' },
+  { key: 'atliOkcu', color: '#c79be0' }, // elinde yay olan atlı (Türk yayı)
 ];
 
 function parse(key) {
@@ -95,7 +77,7 @@ function parse(key) {
 
 function build(key) {
   const p = parse(key), wpn = WEAPONS[p.w], arm = ARMORS[p.armor], shield = SHIELDS[p.sh];
-  const family = p.mounted ? 3 : wpn.ranged ? 2 : p.w.startsWith('sp') ? 1 : 0;
+  const family = p.mounted ? (wpn.ranged ? 4 : 3) : wpn.ranged ? 2 : p.w.startsWith('sp') ? 1 : 0;
   const speed = (p.mounted ? arm.horse : 1) * arm.speed;
   const items = [wpn.item, shield?.item, arm.item, p.mounted ? arm.horseItem : null].filter(Boolean);
   // Asker başı malzeme: ham madde (fiyat için) ve görünür döküm (odun, demir, çelik külçesi, deri, yem).
@@ -114,12 +96,12 @@ function build(key) {
     // Görünen ad ve donanım yazısı arayüzde dile göre kurulur (main.js → sinifAdi, sinifDetay).
     wkey: p.w.replace(':', '-'), skey: p.sh === 'no' ? null : p.sh.replace(':', '-'), akey: p.armor === 'no' ? null : p.armor,
     reach: Math.max(0.85, wpn.range / PX), cycle: wpn.cycle / 1000,
-    vision: Math.max(22, wpn.vision / PX), speed, cost: 0, items, materials, img: visualOf(p, wpn, shield, arm),
+    vision: Math.max(22, wpn.vision / PX), speed, cost: priceOf(p), items, materials, img: visualOf(p, wpn, shield, arm),
   };
 }
 
 // Kart sırası: ucuzdan pahalıya (en ucuz sol üstte; böylece tahta, demir, çelik sırayla), eşit fiyatta aileye göre.
-export const CLASSES = priceAll(Object.keys(USTUNLUK).map(build))
+export const CLASSES = Object.keys(USTUNLUK).map(build)
   .sort((a, b) => a.cost - b.cost || a.family - b.family || a.key.localeCompare(b.key))
   .map((c, i) => ({ ...c, index: i }));
 export const CLASS_BY_KEY = Object.fromEntries(CLASSES.map((c) => [c.key, c]));

@@ -109,6 +109,10 @@ footer{position:fixed;bottom:16px;left:30px;right:30px;font-size:.6em;letter-spa
 #prep-team .pl span{color:var(--muted);overflow:hidden;text-overflow:ellipsis}#prep-team .pl em{margin-left:auto;font-style:normal;color:var(--gold)}
 #prep-team .pl.me b{color:var(--gold)}#prep-team .pl.out{opacity:.4}
 
+#filtre{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+#filtre .eyebrow{margin-right:6px}#filtre button{padding:.35em .85em;font-size:.85em;border-radius:999px}
+#filtre button.secili::before{content:'✓ '}#filtre .temizle{background:none;border-color:transparent;color:var(--muted)}
+#cards .bos{grid-column:1/-1;align-self:center;text-align:center;color:var(--muted)}
 #cards{flex:1;min-height:0;display:grid;grid-template-columns:repeat(10,minmax(0,1fr));grid-template-rows:repeat(4,minmax(0,1fr));gap:8px}
 .card{position:relative;display:flex;flex-direction:column;align-items:stretch;text-align:left;padding:3px 6px 4px 3px;background:linear-gradient(#25392dee,#1a2b21f2);border:1px solid #71826455;border-top:3px solid var(--fam,#e0bf6c);border-radius:6px;min-height:0;overflow:hidden;cursor:pointer;user-select:none;transition:transform .08s,background .12s,border-color .12s}
 .card:hover{background:linear-gradient(#304736,#213326);border-color:#d8c47e;border-top-color:var(--fam,#e0bf6c)}

@@ -108,6 +108,7 @@ function build(key) {
   };
   return {
     key, family, mounted: p.mounted, ranged: !!wpn.ranged, model: wpn.model,
+    skirmish: p.mounted && !!wpn.ranged, // atlı okçu (Türk yayı): vur-kaç, yürürken ok atar (sim.js)
     shield: p.sh === 'no' ? 0 : p.sh === 'sh:wo' ? 1 : p.sh === 'sh:ir' ? 2 : 3,
     armor: ['no', 'le', 'ch', 'st'].indexOf(p.armor),
     // Görünen ad ve donanım yazısı arayüzde dile göre kurulur (main.js → sinifAdi, sinifDetay).

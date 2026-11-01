@@ -225,7 +225,7 @@ function showInfo(c) {
   const strong = EDGE[c.index].filter((x) => x.s > 0).slice(0, 3), weak = EDGE[c.index].filter((x) => x.s < 0).slice(-3).reverse();
   const chip = (x) => `<span class="mini"><img src="${IMG(x.d)}" alt="">${sinifAdi(x.d)}${x.d.skey || x.d.akey ? ' · ' + sinifDetay(x.d) : ''}</span>`;
   const mats = MAT.filter(([k]) => c.materials[k]).map(([k, icon]) => `<span class="mat"><img src="${ICON(icon)}" alt="">${c.materials[k]} ${t('mal.' + k)}</span>`).join('') || `<span class="muted">${t('bilgi.esyasiz')}</span>`;
-  $('info').innerHTML = `<b>${sinifAdi(c)}</b><span class="muted">${sinifDetay(c)}</span><span class="sep"></span><span class="lbl">${t('bilgi.askerBasi')}</span>${mats}
+  $('info').innerHTML = `<b>${sinifAdi(c)}</b><span class="muted">${sinifDetay(c)}</span>${c.skirmish ? `<span class="sep"></span><span class="muted">${t('bilgi.vurKac')}</span>` : ''}<span class="sep"></span><span class="lbl">${t('bilgi.askerBasi')}</span>${mats}
     <span class="sep"></span><span class="lbl good">${t('bilgi.ustun')}</span>${strong.map(chip).join('') || '—'}<span class="sep"></span><span class="lbl bad">${t('bilgi.zayif')}</span>${weak.map(chip).join('') || '—'}`;
 }
 

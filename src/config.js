@@ -18,6 +18,8 @@ export const ARROW = { speed: 26, arc: 0.18, hitRadius: 1.6 };
 export const ENGAGE = 7;      // iki yakın dövüş bölüğü bu kadar yaklaşınca çatışmaya girer
 export const RETARGET = 1;    // bölük hedefini saniyede bir yeniler
 export const AUTO_RANGE = 24; // emirsiz oyuncu bölüğü bu yakındaki görünen düşmana kendiliğinden saldırır
+// Atlı okçu (vur-kaç): yakın dövüş bölüğü menzilin bu katından yakına gelince geri çekilir; alanın kenarına bu kadar yaklaşmaz.
+export const SKIRMISH = { kite: 0.7, edge: 6 };
 
 // Daralan alan: bekleme, sonra sıfıra kadar düzgün daralma. Dışarıdaki asker belli aralıkla can kaybeder.
 export const ZONE = { wait: 30, shrink: 150, damageEvery: 1.5 };

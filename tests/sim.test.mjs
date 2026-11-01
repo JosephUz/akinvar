@@ -96,3 +96,17 @@ test('kalan sayısı canı 0 olmayan askerlerle tutarlı', () => {
     assert.equal(n, w.alive[team]);
   }
 });
+
+test('atlı okçu vur-kaç: yaklaşan yakın dövüşçüden çekilir ve çekilirken ok atar', () => {
+  const w = createBattle({ players: [army(0, 3, 'tb-no-ho-le'), army(1, 3, '2s:ir-no-fo-ch')], seed: 3 });
+  let kite = 0, shotWhileKiting = 0;
+  while (w.winner < 0 && w.t < 300) {
+    const n = w.arrows.length;
+    step(w);
+    let k = false; for (let b = 0; b < w.B; b++) if (w.bkite[b]) { k = true; kite++; }
+    if (k && w.arrows.length > n) shotWhileKiting++;
+  }
+  assert.ok(kite > 0, 'hiç geri çekilmedi');
+  assert.ok(shotWhileKiting > 0, 'geri çekilirken ok atmadı');
+  assert.equal(w.winner, 0);
+});

@@ -2,7 +2,7 @@
 // İki katman: bölük (emir, yürüyüş, hedef, çatışma) ve asker (yuvasını izler, yakın dövüşte hedef seçer, vurur ya da ok atar).
 // Asker verisi düz dizilerde tutulur; 10 binlerce asker için nesne oluşturulmaz.
 // Savaş bitince aynı dünyada bayrak evresi sürer: kazananların askerleri seçilen bayrağa koşar, her biri bir can götürür.
-import { TICK, BOLUK, SPACING, BOLUK_GAP, SOLDIER, ARROW, ENGAGE, RETARGET, AUTO_RANGE, ZONE, FLAG_TIME } from './config.js';
+import { TICK, BOLUK, SPACING, BOLUK_GAP, SOLDIER, ARROW, ENGAGE, RETARGET, AUTO_RANGE, SKIRMISH, ZONE, FLAG_TIME } from './config.js';
 import { CLASSES, FAMILIES, hitChance } from './units.js';
 
 export const PER_BOLUK = BOLUK.cols * BOLUK.rows;
@@ -64,6 +64,7 @@ export function createBattle({ players, seed = 1 }) {
     border: new Uint8Array(B), otarget: new Int32Array(B).fill(-1), oface: new Float32Array(B),
     goal: new Uint8Array(B), gx: new Float32Array(B), gz: new Float32Array(B), offx: new Float32Array(B), offz: new Float32Array(B),
     bflag: new Int32Array(B).fill(-1),
+    bshoot: new Int32Array(B).fill(-1), bkite: new Uint8Array(B), // atlı okçu: her adımda yeniden hesaplanır, anlığa girmez
     alive: [0, 0], arrows: [], flags: [], flagT: 0,
   };
 
@@ -298,6 +299,7 @@ export function step(w) {
   for (let b = 0; b < w.B; b++) {
     if (!w.balive[b]) { w.bengaged[b] = 0; continue; }
     const cls = CLASSES[w.bcls[b]], walk = SOLDIER.walk * cls.speed * dt, o = w.btarget[b];
+    if (cls.skirmish && skirmish(w, b, cls, walk)) continue;
     if (o >= 0) {
       const dx = w.cx[o] - w.bx[b], dz = w.cz[o] - w.bz[b], d = Math.hypot(dx, dz);
       const stopAt = cls.ranged ? Math.max(ENGAGE, cls.reach * 0.85) : ENGAGE;
@@ -337,10 +339,11 @@ export function step(w) {
     } else w.zoneT[i] = 0;
 
     // Yakın dövüş hedefi. Okçu yalnız dibine geleni kılıçlar gibi karşılar; yürüyüşteki bölük yalnız dibindekiyle dövüşür.
+    // Geri çekilen atlı okçu kimseyle boğuşmaz.
     const melee = cls.ranged ? 0.9 : cls.reach;
-    let t = w.target[i];
+    let t = cls.skirmish && w.bkite[b] ? -1 : w.target[i];
     if (t >= 0 && (w.hp[t] <= 0 || (w.x[t] - w.x[i]) ** 2 + (w.z[t] - w.z[i]) ** 2 > (cls.ranged ? 3 : SOLDIER.melee * 1.3) ** 2)) t = -1;
-    if (t < 0 && (i + w.tick) % 4 === 0) {
+    if (t < 0 && (i + w.tick) % 4 === 0 && !(cls.skirmish && w.bkite[b])) {
       const range = cls.ranged ? 2.2 : w.bengaged[b] ? SOLDIER.melee : w.border[b] === ORDER.move ? melee * 1.5 : SOLDIER.acquire;
       t = nearestEnemy(w, i, Math.max(range, melee + 0.5));
     }
@@ -358,23 +361,20 @@ export function step(w) {
         const behind = Math.sin(w.face[t]) * -dx + Math.cos(w.face[t]) * -dz < -0.5 * d;
         if (rng() < hitChance(ci, w.bcls[w.boluk[t]], behind) && --w.hp[t] <= 0) kill(w, t);
       }
+    } else if (cls.skirmish) {
+      // Atlı okçu yuvasını izler (ilerlerken de, geri çekilirken de) ve menzildeki bölüğe at üstünden ok atar.
+      const p = slotPos(w, b, w.slot[i]), dx = p.x - w.x[i], dz = p.z - w.z[i], d = Math.hypot(dx, dz);
+      if (d > 0.05) { const v = Math.min(run, d); mx = (dx / d) * v; mz = (dz / d) * v; }
+      const o = w.bshoot[b];
+      if (o >= 0) { w.face[i] = Math.atan2(w.cx[o] - w.x[i], w.cz[o] - w.z[i]); shoot(w, i, o, cls, ci, rng); }
+      else w.face[i] = d > 0.4 ? Math.atan2(dx, dz) : w.bface[b];
     } else if (cls.ranged && w.btarget[b] >= 0 && w.bengaged[b]) {
       // Okçu yuvasında durur, hedef bölükten bir askere ok atar.
       const p = slotPos(w, b, w.slot[i]), dx = p.x - w.x[i], dz = p.z - w.z[i], d = Math.hypot(dx, dz);
       if (d > 0.05) { const v = Math.min(run, d); mx = (dx / d) * v; mz = (dz / d) * v; }
       const o = w.btarget[b];
       w.face[i] = Math.atan2(w.cx[o] - w.x[i], w.cz[o] - w.z[i]);
-      if (w.cd[i] <= 0) {
-        w.cd[i] = cls.cycle * (0.9 + rng() * 0.3);
-        const tgt = pickMember(w, o, rng);
-        if (tgt >= 0) {
-          const ddx = w.x[tgt] - w.x[i], ddz = w.z[tgt] - w.z[i], dist = Math.hypot(ddx, ddz);
-          if (dist <= cls.reach * 1.1) {
-            w.swing[i] = 0.35;
-            w.arrows.push({ sx: w.x[i], sz: w.z[i], tx: w.x[tgt] + (rng() - 0.5), tz: w.z[tgt] + (rng() - 0.5), t0: w.t, t1: w.t + dist / ARROW.speed + 0.15, target: tgt, cls: ci });
-          }
-        }
-      }
+      shoot(w, i, o, cls, ci, rng);
     } else if (w.bengaged[b] && w.btarget[b] >= 0) {
       // Çatışmadaki bölüğün boşta kalan askeri yuvasında beklemez, düşman bölüğün ortasına yürür.
       const o = w.btarget[b], dx = w.cx[o] - w.x[i], dz = w.cz[o] - w.z[i], d = Math.hypot(dx, dz) || 1e-6;
@@ -407,6 +407,52 @@ export function step(w) {
     retarget(w);
   }
   return w;
+}
+
+// Okçu, dolmuşsa o bölükten bir askere ok atar (menzil dışındaysa beklemeye devam eder).
+function shoot(w, i, o, cls, ci, rng) {
+  if (w.cd[i] > 0) return;
+  w.cd[i] = cls.cycle * (0.9 + rng() * 0.3);
+  const tgt = pickMember(w, o, rng);
+  if (tgt < 0) return;
+  const ddx = w.x[tgt] - w.x[i], ddz = w.z[tgt] - w.z[i], dist = Math.hypot(ddx, ddz);
+  if (dist > cls.reach * 1.1) return;
+  w.swing[i] = 0.35;
+  w.arrows.push({ sx: w.x[i], sz: w.z[i], tx: w.x[tgt] + (rng() - 0.5), tz: w.z[tgt] + (rng() - 0.5), t0: w.t, t1: w.t + dist / ARROW.speed + 0.15, target: tgt, cls: ci });
+}
+
+/**
+ * Atlı okçu bölüğü (vur-kaç). Her adımda: menzildeki en uygun düşman bölüğü ateş hedefi olur (bshoot; yürürken de atılır).
+ * Yürü emri yoksa ve görünen bir yakın dövüş bölüğü SKIRMISH.kite × menzilden yakına geldiyse ondan uzaklaşır (bkite),
+ * alanın içinde kalarak. true: bölüğün yürüyüşü bu adımda burada yapıldı.
+ */
+function skirmish(w, b, cls, walk) {
+  const team = w.bteam[b], x = w.bx[b], z = w.bz[b], o = w.btarget[b];
+  const reach2 = (cls.reach * 1.05) ** 2;
+  let shootB = -1, shootD = reach2, threat = -1, threatD = (cls.reach * SKIRMISH.kite) ** 2;
+  for (let k = 0; k < w.B; k++) {
+    if (!w.balive[k] || w.bteam[k] === team || !visibleTo(w, team, w.cx[k], w.cz[k])) continue;
+    const d = (w.cx[k] - x) ** 2 + (w.cz[k] - z) ** 2;
+    if (d < shootD) { shootD = d; shootB = k; }
+    if (!CLASSES[w.bcls[k]].ranged && d < threatD) { threatD = d; threat = k; }
+  }
+  // Seçili hedef menzildeyse önce o vurulur.
+  if (o >= 0 && w.balive[o] && (w.cx[o] - x) ** 2 + (w.cz[o] - z) ** 2 < reach2) shootB = o;
+  w.bshoot[b] = shootB;
+  w.bkite[b] = 0;
+  if (threat < 0 || w.border[b] === ORDER.move) return false;
+
+  let dx = x - w.cx[threat], dz = z - w.cz[threat];
+  const d = Math.hypot(dx, dz) || 1;
+  dx /= d; dz /= d;
+  let nx = x + dx * walk, nz = z + dz * walk;
+  // Alanın kenarına dayanınca kenar boyunca kayar.
+  const lim = Math.max(0, w.zone - SKIRMISH.edge), r = Math.hypot(nx, nz);
+  if (r > lim) { nx *= lim / r; nz *= lim / r; }
+  w.bx[b] = nx; w.bz[b] = nz;
+  w.bface[b] = Math.atan2(-dx, -dz); // saflar tehdide dönük
+  w.bkite[b] = 1; w.bengaged[b] = 0;
+  return true;
 }
 
 // Bayrak evresi: savaş yok; bayrağa gönderilen askerler koşar, değince bir can götürüp kaybolur.

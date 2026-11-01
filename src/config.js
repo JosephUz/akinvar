@@ -28,7 +28,7 @@ export const CHARGE = { time: 3, mult: 2, rearm: 3 };
 export const ZONE = { wait: 30, shrink: 150, damageEvery: 1.5 };
 
 // Tur: hazırlık → savaş → bayrak evresi.
-export const ECONOMY = { roundIncome: 1000, levelCost: 400, levelIncome: 150 }; // seviye n bedeli 400 × n
+export const ECONOMY = { roundIncome: 1000, levelIncome: 150, costShare: 0.5 }; // bir üst seviyenin bedeli o seviyedeki tur gelirinin yarısı
 export const TALIM = { share: 0.5, max: 8 };                                     // Geliştir: sınıf başına +1 can, bedeli tur gelirinin yarısı
 export const PREP_TIME = 45;
 export const FLAG_TIME = 20;

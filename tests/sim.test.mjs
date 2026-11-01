@@ -30,6 +30,10 @@ test('ordular arenanın içinde ve birbirini görmeden başlar', () => {
   const w = createBattle({ players: [army(0, 30), army(1, 30)] });
   for (let i = 0; i < w.N; i++) assert.ok(Math.hypot(w.x[i], w.z[i]) < w.radius);
   for (let b = 0; b < w.B; b++) assert.equal(visibleTo(w, 1 - w.bteam[b], w.cx[b], w.cz[b]), false);
+  // 5v5'te takım yanlara geniş açılır; düz dizilim uçlardan çemberin dışına taşıyordu
+  const w5 = createBattle({ players: Array.from({ length: 10 }, (_, p) => army(p % 2, 12)) });
+  for (let i = 0; i < w5.N; i++) assert.ok(Math.hypot(w5.x[i], w5.z[i]) < w5.radius - 5);
+  for (let b = 0; b < w5.B; b++) assert.equal(visibleTo(w5, 1 - w5.bteam[b], w5.cx[b], w5.cz[b]), false);
 });
 
 test('iki bot: savaş biter ve kazanan çıkar', () => {

@@ -76,9 +76,12 @@ export function createBattle({ players, seed = 1 }) {
       bl.list.forEach((c, k) => {
         const line = Math.floor(k / bl.perLine), col = k % bl.perLine, inLine = Math.min(bl.perLine, bl.list.length - line * bl.perLine);
         w.bteam[b] = t; w.bcls[b] = c.index; w.bowner[b] = bl.pi; w.bhuman[b] = 0; w.bsp[b] = spacingOf(c);
-        w.bface[b] = w.oface[b] = t === 0 ? Math.PI / 2 : -Math.PI / 2;
-        w.bx[b] = sign * (D - (bl.lines * bl.lineD) / 2 + line * bl.lineD + bl.lineD / 2);
-        w.bz[b] = (centerLat + (col - (inLine - 1) / 2) * bl.lineW) * -sign;
+        // Düz dizilim çemberin kenarına bükülür: yanlara açılan takım çemberin dışına taşmaz, her bölük merkeze bakar.
+        const rho = D - (bl.lines * bl.lineD) / 2 + line * bl.lineD + bl.lineD / 2;
+        const ang = ((centerLat + (col - (inLine - 1) / 2) * bl.lineW) * -sign) / D;
+        w.bx[b] = sign * rho * Math.cos(ang);
+        w.bz[b] = rho * Math.sin(ang);
+        w.bface[b] = w.oface[b] = Math.atan2(-w.bx[b], -w.bz[b]);
         w.offx[b] = w.bx[b] - sign * D; w.offz[b] = w.bz[b];
         w.cx[b] = w.bx[b]; w.cz[b] = w.bz[b]; w.balive[b] = PER_BOLUK;
         const hp = SOLDIER.hp + (p.talim?.[c.index] ?? 0);

@@ -368,6 +368,7 @@ function syncSelection() {
   for (const b of selected) { n += w.balive[b]; fams.add(CLASSES[w.bcls[b]].family); }
   for (let b = 0; b < tagEls.length; b++) tagEls[b].classList.toggle('sel', selected.has(b));
   renderDeck();
+  $('orders').classList.toggle('secimsiz', !selected.size);
   $('sel-info').textContent = selected.size
     ? `${t('sayi.boluk', { n: selected.size })} · ${t('sayi.asker', { n })}` + (fams.size === 1 ? ` · ${aileAdi([...fams][0])}` : '')
     : t('secim.yok');
@@ -427,7 +428,8 @@ ${t('deste.ipucu')}">
 $('deck').addEventListener('click', (e) => {
   const el = e.target.closest('.dk'); if (!el || !w) return;
   const ci = +el.dataset.cls, base = [...selected];
-  selected = new Set(e.shiftKey ? base.filter((b) => w.bcls[b] !== ci) : base.filter((b) => w.bcls[b] === ci));
+  // Dokunmatikte Shift yok: Çoklu açıkken karta dokunmak o sınıfı seçimden çıkarır.
+  selected = new Set(e.shiftKey || (multiSelect && touch) ? base.filter((b) => w.bcls[b] !== ci) : base.filter((b) => w.bcls[b] === ci));
   syncSelection();
 });
 
@@ -569,7 +571,7 @@ function touchTap(x, y) {
       const cls = w.bcls[own];
       selectWhere((o, c) => w.bcls[o] === cls && view.toScreen(c.cx[o], c.cz[o]).on, multiSelect);
     } else if (multiSelect) { if (selected.has(own)) selected.delete(own); else selected.add(own); syncSelection(); }
-    else { selected = new Set([own]); syncSelection(); }
+    else { selected = selected.size === 1 && selected.has(own) ? new Set() : new Set([own]); syncSelection(); } // seçili tek bölüğe yeniden dokun: bırak
     lastTap = { t: now, b: own };
     return;
   }
@@ -1019,12 +1021,13 @@ window.__akinCmd = {
   get m() { return m; }, get w() { return w; }, get sel() { return [...selected]; }, get state() { return state; }, get me() { return me; }, get online() { return online; }, get oda() { return odaDurum; },
 };
 
-// Android geri tuşu: açık pencereyi kapatır; oyunda menüyü açar; bekleme odasından çıkar; ana ekranda uygulamadan çıkar.
+// Android geri tuşu: açık pencereyi kapatır; savaşta seçim varsa bırakır, yoksa menüyü açar; bekleme odasından çıkar; ana ekranda uygulamadan çıkar.
 onBackButton(({ exit }) => {
   const open = document.querySelector('dialog[open]');
   if (open) { open.close(); return; }
   if (!$('bekleme').hidden) { odadanCik(); return; }
   if (state === 'menu') { exit(); return; }
+  if (selected.size && (state === 'battle' || state === 'flag')) { selected = new Set(); syncSelection(); return; }
   if (state !== 'over') openMenu();
 });
 

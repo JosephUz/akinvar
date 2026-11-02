@@ -2,7 +2,8 @@
 //   PLAYWRIGHT=<playwright index.mjs yolu> ADRES=http://localhost:5240 node tests/dokunmatik.mjs
 // Akın Var'da Playwright bağımlılık değil; varsayılan olarak Son Plaka'nınki kullanılır. Çoklu parmak CDP ile verilir.
 // Denetlenen: touch sınıfı, hazırlıkta dokun = al / basılı tut = geri ver, savaşta dokun = seç, seçiliyken zemine dokun = yürü,
-// sürükle = kaydır, iki parmak kıstır = yakınlaştır, basılı tut + sürükle = kutu seçimi, Bırak, dik ekranda çevir uyarısı.
+// sürükle = kaydır, iki parmak kıstır = yakınlaştır, Bırak (✕), seçili bölüğe yeniden dokun = bırak, basılı tut + sürükle = kutu
+// seçimi, dik ekranda çevir uyarısı.
 import assert from 'node:assert/strict';
 
 const { chromium } = await import(process.env.PLAYWRIGHT || 'file:///c:/ju/sonplaka/node_modules/playwright/index.mjs');
@@ -72,6 +73,16 @@ try {
   // Bırak, sonra basılı tut + sürükle = kutu seçimi (bütün ordu)
   await p.tap('#t-birak'); await wait(100);
   assert.equal(await A(() => __akinCmd.sel.length), 0, 'Bırak seçimi temizlemedi');
+  assert.ok(await A(() => document.getElementById('orders').classList.contains('secimsiz')), 'seçim yokken seçim şeridi gizlenmedi');
+
+  // Seçili tek bölüğe yeniden dokun = bırak (çift dokunuş sayılmasın diye arada bekle)
+  await A(() => { const { w, view, me } = __akinCmd; const b = [...Array(w.B).keys()].find((k) => w.bteam[k] === me.team && w.balive[k]); view.target.set(w.cx[b], 0, w.cz[b]); view.zoom = 20; view.resize(); });
+  await wait(200);
+  const t1 = await tagOf();
+  await touch('touchStart', [[t1.x, t1.y]]); await wait(60); await touch('touchEnd', []); await wait(500);
+  assert.equal(await A(() => __akinCmd.sel.length), 1, 'dokununca bölük seçilmedi (2)');
+  await touch('touchStart', [[t1.x, t1.y]]); await wait(60); await touch('touchEnd', []); await wait(100);
+  assert.equal(await A(() => __akinCmd.sel.length), 0, 'seçili bölüğe yeniden dokununca seçim kalkmadı');
   await A(() => { __akinCmd.view.zoom = 45; __akinCmd.view.resize(); }); await wait(200);
   await touch('touchStart', [[6, 6]]); await wait(600);
   for (let k = 1; k <= 6; k++) { await touch('touchMove', [[6 + k * 138, 6 + k * 62]]); await wait(20); }

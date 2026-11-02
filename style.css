@@ -1,6 +1,7 @@
 :root{--ink:#1d2a1f;--panel:#1b2b21eb;--cream:#f1ead4;--muted:#c4cdb6;--gold:#e0bf6c;--line:#7282676e;--blue:#8fb6ec;--red:#ef8a74;
   --fs:clamp(13px,.55vw + 7px,17px)}
 *{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 html,body{margin:0;height:100%;overflow:hidden;background:var(--ink);color:var(--cream);font:var(--fs)/1.45 system-ui,-apple-system,Segoe UI,sans-serif}
 button,input{font:inherit;color:inherit}
 button{cursor:pointer;color:var(--cream);border:1px solid var(--line);border-radius:4px;background:#24372c;padding:.55em .9em;transition:background .15s,border-color .15s}
@@ -158,6 +159,7 @@ footer{position:fixed;bottom:16px;left:30px;right:30px;font-size:.6em;letter-spa
 /* ---------- savaş ---------- */
 #orders{position:absolute;left:24px;bottom:20px;z-index:5;padding:12px 14px;min-width:360px}
 #sel-info{font:1.05em Georgia,serif}
+.sel-row{display:block}
 .order-buttons{display:flex;gap:6px;margin:10px 0 8px}.order-buttons button{font-size:.85em;padding:.45em .9em}
 .hint{display:block;font-size:.72em;color:#a6b59e}.hint b{color:var(--gold);font-weight:600}
 #flag-banner{position:absolute;right:24px;bottom:20px;z-index:5;padding:12px 20px;max-width:min(460px,calc(100vw - 48px))}
@@ -253,21 +255,39 @@ html.touch .card:hover{background:linear-gradient(#25392dee,#1a2b21f2);border-co
   .gold img{width:1.6em;height:1.6em}.gold b{font-size:1.4em}
   .timer b{font-size:1.25em}
   #prep-team{display:none}
-  #filtre{gap:4px}#filtre button{padding:.2em .7em}
-  #cards{grid-template-columns:repeat(auto-fill,minmax(118px,1fr));grid-template-rows:none;grid-auto-rows:118px;overflow-y:auto;gap:6px;overscroll-behavior:contain}
+  /* hazırlık: "Tur 1 · hazırlık" üst bantta zaten yazıyor; başlık gider, süz düğmeleri kartların solunda sütun olur */
+  #prep{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;column-gap:6px}
+  .prep-head,#info{grid-column:1/-1}
+  .prep-title{display:none}
+  #filtre{grid-column:1;flex-direction:column;align-items:stretch;flex-wrap:nowrap;gap:4px;overflow-y:auto;scrollbar-width:none}
+  #filtre .eyebrow{display:none}#filtre button{padding:0 .6em;font-size:.78em}
+  #cards{grid-column:2;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));grid-template-rows:none;grid-auto-rows:118px;overflow-y:auto;gap:6px;overscroll-behavior:contain}
   #info{min-height:0;max-height:2.4em;overflow:hidden;flex-wrap:nowrap;font-size:.72em;padding:2px 8px}
   .prep-hint{display:none}
   /* savaş: emir paneli sol altta dar, bayrak yazısı sağ altta */
   #hud{top:6px;gap:2px}.score{padding:2px 10px;gap:8px}.score b{font-size:1.15em;min-width:2.4em}
   .sub{font-size:.75em}.chip{font-size:.7em;padding:2px 6px}
-  #orders{left:max(8px,env(safe-area-inset-left));right:auto;bottom:max(8px,env(safe-area-inset-bottom));min-width:0;max-width:min(480px,60vw);padding:6px 8px}
-  #sel-info{font-size:.85em}
-  .order-buttons{flex-wrap:wrap;margin:6px 0 0;gap:5px}.order-buttons button{padding:.35em .7em}
-  #deck{flex-wrap:nowrap;overflow-x:auto;gap:8px;margin:4px 0 4px;padding-top:12px}
-  .dk{width:62px;flex:none}.dk .soldier{height:36px;margin-top:12px}
+  /* savaş: alt kenarda iki ayrı şerit. Solda seçim (✕ + küçük kartlar, yalnız seçim varken), sağda emir düğmeleri.
+     Ortası boş kalır: savaş alanı kapanmaz, zemine dokunmak emir olarak geçer. */
+  #orders{left:max(8px,env(safe-area-inset-left));right:max(8px,env(safe-area-inset-right));bottom:max(6px,env(safe-area-inset-bottom));min-width:0;max-width:none;padding:0;background:none;border:0;backdrop-filter:none;display:flex;align-items:flex-end;justify-content:space-between;gap:8px;pointer-events:none}
+  #orders>*{pointer-events:auto}
+  .sel-row{display:flex;align-items:center;gap:6px;min-width:0;padding:3px;background:var(--panel);border:1px solid #7d8a665c;border-radius:6px}
+  #orders.secimsiz .sel-row{display:none}
+  #t-birak{flex:none;width:44px;height:44px;padding:0;font-size:1.05em;color:#ffb39a;border-color:#ffb39a66}
+  #deck{flex-wrap:nowrap;overflow-x:auto;gap:4px;margin:0;padding:0;min-width:0;max-width:none;scrollbar-width:none}
+  .dk{width:40px;height:44px;flex:none;padding:0;overflow:hidden}
+  .dk[data-stack]{box-shadow:none}
+  .dk .soldier{height:38px;margin-top:2px}
+  .dk .fam,.dk b,.dk small{display:none}
+  .dk .badge{right:1px;top:1px;font-size:.6em;padding:0 3px}
+  .dk .bar{position:absolute;left:3px;right:3px;bottom:2px;margin:0;height:3px}
+  #sel-info{font-size:.72em;white-space:nowrap;flex:none;max-width:9.5em;overflow:hidden;text-overflow:ellipsis;padding-right:4px;color:var(--muted)}
+  .order-buttons{flex:none;flex-wrap:nowrap;margin:0 0 0 auto;gap:4px;padding:3px;background:var(--panel);border:1px solid #7d8a665c;border-radius:6px}
+  .order-buttons button{padding:0 .7em;font-size:.88em;min-width:44px}
   .hint{display:none}
-  #flag-banner{left:auto;top:auto;right:max(8px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));max-width:38vw;padding:8px 12px}
-  #flag-banner h3{font-size:1.1em}#flag-banner p{font-size:.75em}
+  /* bayrak evresi: yazı sol üstte (skor bandının solu), alt kenar emirlere kalır */
+  #flag-banner{left:max(8px,env(safe-area-inset-left));top:6px;right:auto;bottom:auto;max-width:calc(50vw - 160px);padding:6px 10px}
+  #flag-banner .eyebrow{display:none}#flag-banner h3{font-size:1em;margin:2px 0}#flag-banner p{font-size:.7em;line-height:1.3}
   #toast{top:64px;font-size:.8em}
   .dialog-inner{padding:18px 20px}.dialog-inner h2{font-size:1.6em;margin:6px 0 10px}
   .menu-stack{margin-top:10px}
@@ -282,3 +302,4 @@ html.touch #help>span{display:none}html.touch #help::before{content:'?';font-wei
 }
 html.app a[href*="josephuz.com"]{display:none!important}
 html.touch kbd{display:none}
+html.touch #help-dialog .touch-only kbd{display:inline-block}

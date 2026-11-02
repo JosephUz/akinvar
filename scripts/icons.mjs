@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /**
- * Uygulama simgesi ve açılış ekranı (Çayır Muhafızı'ndaki betiğin uyarlaması): oyunun altın sancağı (SVG) Playwright'la
+ * Uygulama simgesi ve açılış ekranı (Çayır Muhafızı'ndaki betiğin uyarlaması): çapraz pala ve mızrak (SVG) Playwright'la
  * PNG'ye çizilir ve android/ kaynaklarına yazılır (eski simge, yuvarlak simge, uyarlanabilir simge ön yüzü; açılış
  * görselleri mevcut boyutlarında). store/ altına Play Store için 512 px simge ve 1024x500 tanıtım görseli.
  * Yalnızca simge değişince elle çalıştırılır:
@@ -14,10 +14,12 @@ const res = path.join(root, 'android', 'app', 'src', 'main', 'res');
 const { chromium } = await import(process.env.PLAYWRIGHT || 'file:///c:/ju/sonplaka/node_modules/playwright/index.mjs');
 const BG = '#1d2a1f', GOLD = '#e0bf6c';
 
-/** Sancak: sitenin marka işareti (index.html .brand), altın; altında çayır yayı. */
-const art = `
-  <path d="M14 86 Q50 70 86 86 Z" fill="#4f6b3a"/>
-  <g transform="translate(50 47) scale(2.25) translate(-20.5 -20.5)"><path d="M11 36V5l19 6-15 6v19z" fill="${GOLD}"/></g>`;
+/** Çapraz pala ve mızrak: oyunun iki temel bölüğü; 48 px'te de okunur. */
+const CREAM = '#f1ead4', WOOD = '#9b7b4a';
+const art = `<g transform="translate(50 50)">
+  <g transform="rotate(45)"><path d="M0 -42 L 3 -34 V 34 H -3 V -34 Z" fill="${CREAM}"/><path d="M0 -46 L 5 -36 L 0 -32 L -5 -36 Z" fill="${GOLD}"/><rect x="-1.5" y="-30" width="3" height="72" fill="${WOOD}"/></g>
+  <g transform="rotate(-45)"><path d="M-2 -40 C 6 -30 6 -4 3 14 H -3 C -1 -6 -2 -26 -2 -40 Z" fill="${CREAM}"/><rect x="-10" y="14" width="20" height="4" rx="2" fill="${GOLD}"/><rect x="-2.5" y="18" width="5" height="16" rx="2" fill="${WOOD}"/><circle cx="0" cy="37" r="3.5" fill="${GOLD}"/></g>
+</g>`;
 /** frame: 'square' | 'round' | 'none' (uyarlanabilir ön yüz: saydam, içerik ortadaki güvenli alanda). */
 const svg = (frame, scale = 1) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
   ${frame === 'square' ? `<rect width="100" height="100" rx="22" fill="${BG}"/>` : frame === 'round' ? `<circle cx="50" cy="50" r="50" fill="${BG}"/>` : ''}
@@ -42,7 +44,7 @@ for (const [d, k] of Object.entries(DENSITY)) {
 }
 writeFileSync(path.join(res, 'values', 'ic_launcher_background.xml'), `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">${BG}</color>\n</resources>\n`);
 
-/** Açılış görseli: koyu yeşil zemin, ortada sancak ve AKIN VAR yazısı; mevcut splash.png boyutları korunur. */
+/** Açılış görseli: koyu yeşil zemin, ortada simge ve AKIN VAR yazısı; mevcut splash.png boyutları korunur. */
 const splash = (w, h) => {
   const s = Math.min(w, h) * 0.34;
   return box(`<div style="text-align:center;font:600 ${s * 0.24}px Georgia,serif;color:#f1ead4;letter-spacing:${s * 0.04}px">

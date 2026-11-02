@@ -197,7 +197,7 @@ export function botPrep(m, p) {
   const rng = m.rng, r = m.round, enemies = m.players.filter((q) => q.team !== p.team && !q.out);
   // 1) Ekonomi
   const ecoTarget = { acgozlu: Math.min(8, r + 1), akinci: Math.floor(r / 4), dengeli: Math.ceil(r / 2), karsi: Math.floor(r / 2) }[p.personality];
-  while (p.eco < ecoTarget && p.gold - ecoCost(p.eco) >= (p.personality === 'acgozlu' ? 150 : 500)) buyEco(m, p);
+  while (p.eco < ecoTarget && p.gold - ecoCost(p.eco) >= (p.personality === 'acgozlu' ? 150 : 500)) if (!buyEco(m, p)) break; // hazır oyuncu alamaz: döngü dönmesin
   // 2) Geliştir: dengeli ve karşı kurucu, en çok bastığı sınıfı
   if ((p.personality === 'dengeli' || p.personality === 'karsi') && r >= 3) {
     const fam = favoriteClass(p);

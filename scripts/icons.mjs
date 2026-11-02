@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 /**
  * Uygulama simgesi ve açılış ekranı (Çayır Muhafızı'ndaki betiğin uyarlaması): çapraz pala ve mızrak (SVG) Playwright'la
  * PNG'ye çizilir ve android/ kaynaklarına yazılır (eski simge, yuvarlak simge, uyarlanabilir simge ön yüzü; açılış
- * görselleri mevcut boyutlarında). store/ altına Play Store için 512 px simge ve 1024x500 tanıtım görseli.
+ * görselleri mevcut boyutlarında). store/ altına Play Store için 512 px simge ve 1024x500 tanıtım görseli (Türkçe ve İngilizce).
  * Yalnızca simge değişince elle çalıştırılır:
  *   PLAYWRIGHT=<playwright index.mjs> node scripts/icons.mjs   (Playwright'ın kendi Chromium'u; kurulu Chrome kullanılmaz)
  */
@@ -59,8 +59,11 @@ for (const dir of readdirSync(res).filter(d => d.startsWith('drawable'))) {
 
 mkdirSync(path.join(root, 'store'), { recursive: true });
 await png(box(svg('square', 0.92).replace('rx="22"', 'rx="0"'), 512, 512), 512, 512, path.join(root, 'store', 'icon-512.png'));
-await png(box(`<div style="display:flex;align-items:center;gap:40px;font:600 84px Georgia,serif;color:#f1ead4;letter-spacing:8px">
+// Tanıtım görseli Türkçe ve İngilizce (ad çevrilmez, yalnız alt yazı): feature-1024x500.png, feature-1024x500-en.png
+for (const [ek, alt] of [['', 'KUR. BUL. YÜKLEN.'], ['-en', 'BUILD. FIND. CHARGE.']]) {
+  await png(box(`<div style="display:flex;align-items:center;gap:40px;font:600 84px Georgia,serif;color:#f1ead4;letter-spacing:8px">
   <div style="width:300px;height:300px">${svg('none')}</div><div>AKIN <span style="color:${GOLD}">VAR</span>
-  <div style="font:700 24px system-ui,Segoe UI,sans-serif;letter-spacing:5px;color:#c4cdb6;margin-top:10px">KUR. BUL. YÜKLEN.</div></div></div>`, 1024, 500, BG), 1024, 500, path.join(root, 'store', 'feature-1024x500.png'));
+  <div style="font:700 24px system-ui,Segoe UI,sans-serif;letter-spacing:5px;color:#c4cdb6;margin-top:10px">${alt}</div></div></div>`, 1024, 500, BG), 1024, 500, path.join(root, 'store', `feature-1024x500${ek}.png`));
+}
 await browser.close();
 console.log('simgeler hazır');

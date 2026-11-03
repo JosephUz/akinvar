@@ -283,6 +283,9 @@ function renderPrep() {
       <div class="row-name"><b class="name">${t('silah.' + c.wkey)}</b><span class="price">◉ ${num(c.cost)}</span></div>
     </div>`;
   }).join('') + `<button class="card ready" id="ready" ${me.ready ? 'disabled' : ''}>${me.ready ? t('hazir.bekleniyor') : t('hazir.hazir') + ' <span>→</span>'}<small>${t('sayi.boluk', { n: me.units.length })} · ${t('sayi.asker', { n: me.units.length * PER_BOLUK })}</small></button>`;
+  // Kartlar kayan düzende (dar pencere, telefon) Hazır düğmesi üst bantta sabit; ızgaradaki kopyası orada gizli (style.css).
+  const rt = $('ready-top'); rt.disabled = !!me.ready;
+  rt.innerHTML = me.ready ? t('hazir.bekleniyor') : `${t('hazir.hazir')} <span>→</span><small>${t('sayi.boluk', { n: me.units.length })}</small>`;
   $('prep').classList.toggle('waiting', !!me.ready);
   $('prep-team').innerHTML = m.players.map((p) => {
     const info = p.out ? t('takim.elendi') : p === me ? t('sayi.boluk', { n: me.units.length }) : p.team === me.team ? `${t('sayi.boluk', { n: p.units.length })} · ${t('takim.eko', { n: p.eco })}` : t(p.ready ? 'takim.hazir' : 'takim.kuruyor');
@@ -328,7 +331,7 @@ function act(kind, arg, el, refund) {
 }
 function prepClick(e, refund) {
   const up = e.target.closest('[data-up]'), card = e.target.closest('[data-cls]');
-  if (e.target.closest('#ready')) { if (!refund) beginBattle(); return; }
+  if (e.target.closest('#ready, #ready-top')) { if (!refund) beginBattle(); return; }
   if (e.target.closest('#eco')) { act('eko', 0, $('eco'), refund); return; }
   if (up) { act('talim', +up.dataset.up, up, refund); return; }
   if (card) act('al', +card.dataset.cls, card, refund);
@@ -340,7 +343,7 @@ $('prep').addEventListener('pointerdown', (e) => {
   if (e.pointerType !== 'touch') return;
   const card = e.target.closest('[data-cls]');
   if (card) showInfo(CLASSES[+card.dataset.cls]);
-  if (!e.target.closest('[data-cls], [data-up], #eco') || e.target.closest('#ready')) return;
+  if (!e.target.closest('[data-cls], [data-up], #eco') || e.target.closest('#ready, #ready-top')) return;
   const hold = { x: e.clientX, y: e.clientY, target: e.target, done: false };
   hold.timer = setTimeout(() => { hold.done = true; navigator.vibrate?.(15); prepClick({ target: hold.target }, true); }, 500);
   prepHold = hold;

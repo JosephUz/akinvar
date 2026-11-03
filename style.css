@@ -141,6 +141,10 @@ footer{position:fixed;bottom:16px;left:30px;right:30px;font-size:.6em;letter-spa
 .card.ready:hover:not(:disabled){background:#efd59a}.card.ready span{font-size:1.2em}
 .card.ready small{color:#3c4630;letter-spacing:0;font-weight:700;font-size:.62em;margin-top:6px;white-space:normal;text-align:center}
 .card.ready:disabled{opacity:.7}
+/* üst banttaki Hazır: yalnız kartlar kayan düzende (aşağıda), ızgaranın sonundaki kart yerine; hep görünür */
+.ready-top{display:none;align-items:center;gap:.4em;flex:none;min-height:44px;padding:0 1.1em;background:var(--gold);color:#1f2a1d;border:1px solid #efd59a;border-radius:6px;font-weight:900;letter-spacing:2px;cursor:pointer}
+.ready-top span{font-size:1.2em}.ready-top small{color:#3c4630;letter-spacing:0;font-weight:700;font-size:.72em;margin-left:.3em}
+.ready-top:hover:not(:disabled){background:#efd59a}.ready-top:disabled{opacity:.7;cursor:default;letter-spacing:0;font-weight:700}
 #prep.waiting #cards .unit,#prep.waiting .eco-card{opacity:.45;pointer-events:none}
 .card.shake{animation:shake .3s}
 @keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
@@ -210,7 +214,7 @@ dialog::backdrop{background:#102017a8;backdrop-filter:blur(4px)}
 
 /* alçak pencere (itch.io 1280×720 gömülü): kart yan sütunu sıkışır, menzil/hız satırları kesilmesin */
 @media(max-height:800px){.card .side{gap:2px;padding-top:0}.card .items img{width:1.05em;height:1.05em}.card .stats{font-size:.6em;line-height:1.05}.card .up{font-size:.62em}.prep-hint{display:none}}
-@media(max-width:1250px){#cards{grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:none;grid-auto-rows:minmax(170px,auto);overflow-y:auto}#prep-team{display:none}.eco-card{min-width:0}}
+@media(max-width:1250px){.ready-top{display:flex}#cards .card.ready{display:none}#cards{grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:none;grid-auto-rows:minmax(170px,auto);overflow-y:auto}#prep-team{display:none}.eco-card{min-width:0}}
 @media(max-width:900px){#flag-banner{right:12px;left:12px;bottom:auto;top:110px;max-width:none}.brand small{display:none}#cards{grid-template-columns:repeat(4,minmax(0,1fr))}.prep-head{flex-wrap:wrap}#orders{min-width:0;right:12px;left:12px;bottom:12px}.hint{display:none}.site-name{display:none}#koltuklar,.b-ayar{grid-template-columns:1fr}.cevrim-dugmeler{grid-template-columns:1fr}}
 
 /* ---------- dokunmatik ve telefon (Çayır Muhafızı düzeni) ---------- */

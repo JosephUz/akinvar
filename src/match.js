@@ -19,7 +19,7 @@ export const talimCost = (p) => Math.round(income(p) * TALIM.share);
  * teamSize oyuncu takım başına. Tek başına: humans = [0] (oyuncu 0 insan, Mavi). Çevrim içi: seats[koltuk] = { name } ya da null (bot);
  * koltuk sırası oyuncu sırasıdır (ilk teamSize Mavi, sonrakiler Kırmızı). Her oyuncunun bir bot kişiliği vardır: insan koparsa o oynar.
  */
-export function createMatch({ teamSize = 1, flagHp = 100, difficulty = 'orta', seed = (Math.random() * 1e9) | 0, humans = [0], seats = null } = {}) {
+export function createMatch({ teamSize = 1, flagHp = 100, difficulty = 'orta', seed = (Math.random() * 1e9) | 0, humans = [0], seats = null, maxUnits } = {}) {
   const rng = mulberry32(seed);
   const players = [];
   for (const team of [0, 1]) for (let k = 0; k < teamSize; k++) {
@@ -33,6 +33,7 @@ export function createMatch({ teamSize = 1, flagHp = 100, difficulty = 'orta', s
     });
   }
   const m = { seed, rng, round: 0, flagHp, teamSize, difficulty: DIFFICULTY[difficulty] ? difficulty : 'orta', players, phase: 'prep', battle: null, winner: -1, log: [] };
+  if (maxUnits) m.maxUnits = maxUnits;
   startRound(m);
   return m;
 }
@@ -50,9 +51,10 @@ function startRound(m) {
 
 // ---------- hazırlık ----------
 
+/** m.maxUnits: oyuncu başına en çok bölük (yoksa sınırsız; Juland'daki minyatür meydan sınırlar). */
 export function buyUnit(m, p, cls) {
   const c = CLASSES[cls];
-  if (m.phase !== 'prep' || p.out || p.ready || p.gold < c.cost) return false;
+  if (m.phase !== 'prep' || p.out || p.ready || p.gold < c.cost || p.units.length >= (m.maxUnits ?? Infinity)) return false;
   p.gold -= c.cost; p.units.push(cls); return true;
 }
 export function refundUnit(m, p, cls) {
@@ -220,7 +222,7 @@ export function botPrep(m, p) {
       const hi = Math.max(1, Math.round(sorted.length * tier));
       pick = sorted[Math.max(0, hi - 1 - ((rng() * Math.min(hi, 8)) | 0))];
     }
-    buyUnit(m, p, pick.index);
+    if (!buyUnit(m, p, pick.index)) break; // bölük sınırı (m.maxUnits)
   }
   p.ready = true;
 }
